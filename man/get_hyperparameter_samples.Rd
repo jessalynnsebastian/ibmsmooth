@@ -45,5 +45,7 @@ global baseline process standard deviation and precision are also returned
 as \code{global_process_sd} and \code{global_process_precision}.
 
 For Stan fits, recognized transformed parameters such as \code{sigma}, \code{tau}, and
-\code{gamma} are converted from the scaled model units to the original data units.
+\code{gamma} are converted from scaled model units. Baseline-horseshoe fits also
+report \code{baseline_process_sd}, \code{global_excess_sd}, \code{excess_process_sd},
+\code{process_sd} (total roughness), and \code{process_variance}.
 }

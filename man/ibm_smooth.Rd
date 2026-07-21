@@ -47,7 +47,7 @@ function will return the Stan code without attempting to fit a model.}
 
 \item{adaptive}{Character; specifies if and how to use adaptive smoothing.
 Options are \code{"nonadaptive"} (default), \code{"rw"}, \code{"horseshoe"},
-\code{"rhs"}, or \code{"bridge"}.}
+\code{"baseline_horseshoe"}, \code{"rhs"}, or \code{"bridge"}.}
 
 \item{log_sigma}{List with elements \code{mu} and \code{sd} giving the prior
 mean and standard deviation for \code{log(sigma)}. Defaults to
@@ -55,11 +55,14 @@ mean and standard deviation for \code{log(sigma)}. Defaults to
 
 \item{log_tau}{List with elements \code{mu} and \code{sd} giving the prior
 mean and standard deviation for \code{log(tau)}. Used for
-\code{adaptive = "nonadaptive"} and \code{"rw"}. Defaults to
+\code{adaptive = "nonadaptive"}, \code{"rw"}, and
+\code{"baseline_horseshoe"}. For the latter this is the prior on the
+positive baseline process scale \code{tau0}. Defaults to
 \code{list(mu = -2, sd = 0.5)}.}
 
-\item{zeta}{Numeric; global shrinkage scale used by horseshoe, rhs and
-bridge priors. Default \code{0.1}.}
+\item{zeta}{Numeric; global shrinkage scale used by horseshoe,
+baseline_horseshoe, rhs and bridge priors. In the baseline-horseshoe model
+it controls only excess roughness. Default \code{0.1}.}
 
 \item{slab_scale}{Numeric; slab scale for the regularized horseshoe (rhs).
 Default \code{2}.}
@@ -115,6 +118,7 @@ This function supports several adaptive smoothing options:
 \item "nonadaptive" (default): single global smoothing parameter (tau).
 \item "rw": random-walk prior on log(tau) across segments.
 \item "horseshoe": horseshoe prior on local IBM process scales.
+\item "baseline_horseshoe": horseshoe excess roughness above a positive IBM baseline.
 \item "rhs": regularized horseshoe prior on local IBM process scales.
 \item "bridge": bridge prior on whitened IBM transition innovations (requires centered parameterization).
 }

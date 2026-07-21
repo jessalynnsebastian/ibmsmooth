@@ -9,6 +9,7 @@
 #' - "nonadaptive" (default): single global smoothing parameter (tau).
 #' - "rw": random-walk prior on log(tau) across segments.
 #' - "horseshoe": horseshoe prior on local IBM process scales.
+#' - "baseline_horseshoe": horseshoe excess roughness above a positive IBM baseline.
 #' - "rhs": regularized horseshoe prior on local IBM process scales.
 #' - "bridge": bridge prior on whitened IBM transition innovations (requires centered parameterization).
 #'
@@ -26,16 +27,19 @@
 #'   \code{get_code = TRUE} the Stan code is written to this file.
 #' @param adaptive Character; specifies if and how to use adaptive smoothing.
 #'   Options are \code{"nonadaptive"} (default), \code{"rw"}, \code{"horseshoe"},
-#'   \code{"rhs"}, or \code{"bridge"}.
+#'   \code{"baseline_horseshoe"}, \code{"rhs"}, or \code{"bridge"}.
 #' @param log_sigma List with elements \code{mu} and \code{sd} giving the prior
 #'   mean and standard deviation for \code{log(sigma)}. Defaults to
 #'   \code{list(mu = -1, sd = 1)}.
 #' @param log_tau List with elements \code{mu} and \code{sd} giving the prior
 #'   mean and standard deviation for \code{log(tau)}. Used for
-#'   \code{adaptive = "nonadaptive"} and \code{"rw"}. Defaults to
+#'   \code{adaptive = "nonadaptive"}, \code{"rw"}, and
+#'   \code{"baseline_horseshoe"}. For the latter this is the prior on the
+#'   positive baseline process scale \code{tau0}. Defaults to
 #'   \code{list(mu = -2, sd = 0.5)}.
-#' @param zeta Numeric; global shrinkage scale used by horseshoe, rhs and
-#'   bridge priors. Default \code{0.1}.
+#' @param zeta Numeric; global shrinkage scale used by horseshoe,
+#'   baseline_horseshoe, rhs and bridge priors. In the baseline-horseshoe model
+#'   it controls only excess roughness. Default \code{0.1}.
 #' @param slab_scale Numeric; slab scale for the regularized horseshoe (rhs).
 #'   Default \code{2}.
 #' @param alpha Numeric in (0,2]; exponent for bridge prior (only used when
@@ -105,7 +109,8 @@ ibm_smooth <- function(t = NULL, y = NULL,
        iter = 2000, chains = 4,
        cores = getOption("mc.cores", chains),
        max_treedepth = 12, adapt_delta = 0.9, ...) {
-  adaptive <- match.arg(adaptive, c("nonadaptive", "rw", "horseshoe", "rhs", "bridge"))
+  adaptive <- match.arg(adaptive, c("nonadaptive", "rw", "horseshoe",
+                                    "baseline_horseshoe", "rhs", "bridge"))
   # determine centered / noncentered choice
   if (is.null(centered) && is.null(noncentered)) {
     # if neither given, default to centered
@@ -213,11 +218,11 @@ ibm_smooth <- function(t = NULL, y = NULL,
     log_sigma_sd = log_sigma$sd
   )
 
-  if (adaptive == "nonadaptive" || adaptive == "rw") {
+  if (adaptive %in% c("nonadaptive", "rw", "baseline_horseshoe")) {
     stan_data$log_tau_mu <- log_tau$mu
     stan_data$log_tau_sd <- log_tau$sd
   }
-  if (adaptive == "horseshoe") {
+  if (adaptive %in% c("horseshoe", "baseline_horseshoe")) {
     stan_data$zeta <- zeta
   }
   if (adaptive == "rhs") {
@@ -258,7 +263,9 @@ ibm_smooth <- function(t = NULL, y = NULL,
       time_grid = time_grid,
       obs_time_idx = obs_time_idx,
       initial_sd = initial_sd
-    )
+    ),
+    adaptive = adaptive,
+    centered = centered
   )
   class(fit) <- c("ibmfit", class(fit))
   return(fit)

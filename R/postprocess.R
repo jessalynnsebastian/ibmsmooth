@@ -146,7 +146,9 @@ get_curve_summary <- function(ibmfit, n_samples = 1000,
 #' as `global_process_sd` and `global_process_precision`.
 #'
 #' For Stan fits, recognized transformed parameters such as `sigma`, `tau`, and
-#' `gamma` are converted from the scaled model units to the original data units.
+#' `gamma` are converted from scaled model units. Baseline-horseshoe fits also
+#' report `baseline_process_sd`, `global_excess_sd`, `excess_process_sd`,
+#' `process_sd` (total roughness), and `process_variance`.
 #'
 #' @param ibmfit An object of class `ibmfit`.
 #' @param n_samples Number of samples to draw for INLA fits, or maximum number
@@ -169,7 +171,9 @@ get_hyperparameter_samples <- function(ibmfit, n_samples = 1000,
 
   make_long_from_array <- function(arr, name, keep, value_transform = identity,
                                    parameter = name, t = NA_real_) {
-    if (is.null(dim(arr))) arr <- matrix(arr, ncol = 1)
+    if (is.null(dim(arr)) || length(dim(arr)) == 1L) {
+      arr <- matrix(arr, ncol = 1)
+    }
     arr <- arr[keep, , drop = FALSE]
     trailing_dim <- dim(arr)[-1]
     mat <- matrix(arr, nrow = length(keep))
@@ -207,6 +211,7 @@ get_hyperparameter_samples <- function(ibmfit, n_samples = 1000,
     if (!is.null(n_samples) && n_draw > n_samples) keep <- seq_len(n_samples)
 
     pieces <- list()
+    process_scale <- dat$y_sd / (dat$dt_mean^(3 / 2))
 
     if (isTRUE(natural)) {
       if (!is.null(samples$sigma)) {
@@ -230,22 +235,47 @@ get_hyperparameter_samples <- function(ibmfit, n_samples = 1000,
         }
         pieces[[length(pieces) + 1L]] <- make_long_from_array(
           samples$tau, "tau", keep,
-          value_transform = function(x) x * dat$y_sd / (dat$dt_mean^(3 / 2)),
+          value_transform = function(x) x * process_scale,
           parameter = "process_sd",
           t = transition_t
         )
         pieces[[length(pieces) + 1L]] <- make_long_from_array(
           samples$tau, "tau", keep,
-          value_transform = function(x) 1 / ((x * dat$y_sd / (dat$dt_mean^(3 / 2)))^2),
+          value_transform = function(x) 1 / ((x * process_scale)^2),
           parameter = "process_precision",
           t = transition_t
+        )
+      }
+      if (!is.null(samples$tau0)) {
+        pieces[[length(pieces) + 1L]] <- make_long_from_array(
+          samples$tau0, "tau0", keep,
+          value_transform = function(x) x * process_scale,
+          parameter = "baseline_process_sd"
+        )
+      }
+      if (!is.null(samples$psi)) {
+        transition_t <- (dat$time_grid_raw[-1] +
+          dat$time_grid_raw[-length(dat$time_grid_raw)]) / 2
+        pieces[[length(pieces) + 1L]] <- make_long_from_array(
+          samples$psi, "psi", keep,
+          value_transform = function(x) x * process_scale,
+          parameter = "excess_process_sd", t = transition_t
+        )
+      }
+      if (!is.null(samples$local_variance)) {
+        transition_t <- (dat$time_grid_raw[-1] +
+          dat$time_grid_raw[-length(dat$time_grid_raw)]) / 2
+        pieces[[length(pieces) + 1L]] <- make_long_from_array(
+          samples$local_variance, "local_variance", keep,
+          value_transform = function(x) x * process_scale^2,
+          parameter = "process_variance", t = transition_t
         )
       }
       if (!is.null(samples$gamma)) {
         pieces[[length(pieces) + 1L]] <- make_long_from_array(
           samples$gamma, "gamma", keep,
-          value_transform = function(x) x * dat$y_sd / (dat$dt_mean^(3 / 2)),
-          parameter = "global_process_sd"
+          value_transform = function(x) x * process_scale,
+          parameter = if (!is.null(samples$tau0)) "global_excess_sd" else "global_process_sd"
         )
       }
     }

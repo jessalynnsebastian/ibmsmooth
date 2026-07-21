@@ -391,3 +391,64 @@ plot_precision_curve <- function(ibmfit, n_samples = 1000,
   attr(p, "precision_summary") <- plot_df
   p
 }
+
+#' Plot baseline-horseshoe IBM roughness components
+#'
+#' Plot posterior pointwise summaries of either total local roughness or the
+#' horseshoe excess roughness. Values are process standard deviations on the
+#' original response/time scale and are evaluated at transition midpoints.
+#'
+#' @param ibmfit A baseline-horseshoe `ibmfit` object.
+#' @param component Either `"total"` or `"excess"`.
+#' @param n_samples Maximum number of posterior draws to use.
+#' @param level Pointwise credible interval level.
+#' @param log_y Logical; use a log10 y-axis.
+#' @param title Optional plot title.
+#' @param line_color,ribbon_fill Plot colors.
+#' @param ... Additional arguments, currently unused.
+#'
+#' @return A `ggplot` object with its summary data in the `roughness_summary`
+#'   attribute.
+#' @export
+plot_roughness_curve <- function(ibmfit, component = c("total", "excess"),
+                                 n_samples = 1000, level = 0.95,
+                                 log_y = TRUE, title = NULL,
+                                 line_color = "purple4",
+                                 ribbon_fill = "purple", ...) {
+  component <- match.arg(component)
+  if (!inherits(ibmfit, "ibmfit")) {
+    stop("ibmfit must be an object of class 'ibmfit'.", call. = FALSE)
+  }
+  if (!is.numeric(level) || length(level) != 1L || !is.finite(level) ||
+      level <= 0 || level >= 1) {
+    stop("level must be a single number between 0 and 1.", call. = FALSE)
+  }
+  parameter <- if (component == "total") "process_sd" else "excess_process_sd"
+  hp <- get_hyperparameter_samples(ibmfit, n_samples = n_samples,
+                                   format = "long", natural = TRUE)
+  draws <- hp[hp$parameter == parameter & !is.na(hp$t), , drop = FALSE]
+  if (nrow(draws) == 0L) {
+    stop("No ", component, " local roughness samples were found in this fit.",
+         call. = FALSE)
+  }
+  probs <- c((1 - level) / 2, 0.5, 1 - (1 - level) / 2)
+  groups <- split(draws, draws$index)
+  plot_df <- do.call(rbind, lapply(groups, function(d) {
+    q <- stats::quantile(d$value, probs = probs, na.rm = TRUE, names = FALSE)
+    data.frame(index = d$index[1L], t = d$t[1L], mean = mean(d$value),
+               lower = q[1L], median = q[2L], upper = q[3L])
+  }))
+  plot_df <- plot_df[order(plot_df$t), , drop = FALSE]
+  if (is.null(title)) {
+    title <- paste("Baseline-horseshoe IBM", component, "local roughness")
+  }
+  p <- ggplot2::ggplot(plot_df, ggplot2::aes(x = t, y = median)) +
+    ggplot2::geom_ribbon(ggplot2::aes(ymin = lower, ymax = upper),
+                         fill = ribbon_fill, alpha = 0.2) +
+    ggplot2::geom_line(color = line_color) +
+    ggplot2::labs(title = title, x = "t", y = paste(component, "process SD")) +
+    ggplot2::theme_minimal()
+  if (isTRUE(log_y)) p <- p + ggplot2::scale_y_log10()
+  attr(p, "roughness_summary") <- plot_df
+  p
+}
