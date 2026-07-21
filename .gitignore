@@ -1,0 +1,27 @@
+# R / R package artifacts
+.Rhistory
+.RData
+.Ruserdata
+*.Rproj.user
+*.Rproj
+*.o
+*.so
+*.dll
+
+# Build and check outputs
+*.tar.gz
+*.tgz
+/pkgdown/
+/docs/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Local environment files
+.env
+.envrc
+
+# Temporary files
+*.tmp
+*.temp

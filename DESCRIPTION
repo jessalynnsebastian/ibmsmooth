@@ -1,0 +1,28 @@
+Package: ibmsmooth
+Type: Package
+Title: Integrated Brownian Motion Smoothing
+Version: 0.0.0.9000
+Authors@R: person(given = "Jessalyn", family = "Sebastian", email = "jessalys@uci.edu", role = c("aut", "cre"))
+Description: Fits global and locally adaptive integrated Brownian motion smoothers
+    for Gaussian observations using either Stan or INLA. Stan models support
+    full MCMC inference with global and horseshoe-adaptive smoothness. INLA
+    models provide a fast latent Gaussian implementation with optional
+    B-spline adaptivity for the log precision function.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Imports:
+    stats,
+    ggplot2,
+    Matrix,
+    splines
+Suggests:
+    rstan,
+    INLA,
+    knitr,
+    rmarkdown,
+    testthat (>= 3.0.0)
+Additional_repositories: https://inla.r-inla-download.org/R/stable
+VignetteBuilder: knitr
+Roxygen: list(markdown = TRUE)
+Config/testthat/edition: 3
+Config/roxygen2/version: 8.0.0
