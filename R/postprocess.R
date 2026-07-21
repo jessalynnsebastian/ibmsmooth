@@ -521,8 +521,9 @@ get_hyperparameter_summary <- function(ibmfit, n_samples = 1000,
 #'
 #' @return A matrix of posterior samples.
 #' @export
-get_samples <- function(ibmfit, param = c("f", "fprime"), n_samples = NULL, ...) {
-  param <- match.arg(param, c("f", "fprime"))
+get_samples <- function(ibmfit, param = c("f", "B_operational", "fprime_left",
+                                          "fprime_right", "fprime"), n_samples = NULL, ...) {
+  param <- match.arg(param)
 
   if (!is.null(ibmfit$state_samples_scaled)) {
     samples <- ibmfit$state_samples_scaled[[param]]
@@ -541,12 +542,24 @@ get_samples <- function(ibmfit, param = c("f", "fprime"), n_samples = NULL, ...)
     if (!requireNamespace("rstan", quietly = TRUE)) {
       stop("The rstan package is required to extract samples from a Stan fit.")
     }
-    samples <- rstan::extract(ibmfit$stanfit, pars = param)[[param]]
+    stan_param <- param
+    if (param == "fprime" && ibmfit$adaptive %in% c("nonadaptive", "baseline_horseshoe", "persistent_clock")) {
+      warning("`fprime` is deprecated for stochastic-clock fits; returning right derivatives with the final knot undefined.")
+      stan_param <- "fprime_right"
+    }
+    samples <- rstan::extract(ibmfit$stanfit, pars = stan_param)[[stan_param]]
     dat <- ibmfit$data
     if (param == "f") {
       samples_rescaled <- samples * dat$y_sd + dat$y_mean
-    } else {
+    } else if (param %in% c("fprime", "fprime_left", "fprime_right")) {
       samples_rescaled <- samples * (dat$y_sd / dat$dt_mean)
+    } else {
+      samples_rescaled <- samples * dat$y_sd
+    }
+    if (param == "fprime_left") samples_rescaled[, 1L] <- NA_real_
+    if (param %in% c("fprime", "fprime_right") &&
+        ibmfit$adaptive %in% c("nonadaptive", "baseline_horseshoe", "persistent_clock")) {
+      samples_rescaled[, ncol(samples_rescaled)] <- NA_real_
     }
     if (!is.null(n_samples) && nrow(samples_rescaled) > n_samples) {
       samples_rescaled <- samples_rescaled[seq_len(n_samples), , drop = FALSE]

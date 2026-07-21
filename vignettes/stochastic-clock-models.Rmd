@@ -1,0 +1,191 @@
+---
+title: "Stochastic-clock integrated Brownian motion"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Stochastic-clock integrated Brownian motion}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+```
+
+## Model
+
+The current `ibmsmooth` Stan models retain ordinary integrated Brownian motion
+in operational time and adapt the rate at which operational time elapses. At
+ordered grid points, the state is
+
+\[
+X_i = \{B(T_i), I(T_i)\}^{\mathsf T}, \qquad f(t_i)=I(T_i).
+\]
+
+For observed-time spacing \(\Delta_i=t_i-t_{i-1}\), an interval clock rate
+\(\lambda_i\) gives operational-time increment
+
+\[
+q_i=\lambda_i\Delta_i.
+\]
+
+Conditional on \(q_i\), the package uses the exact transition
+
+\[
+X_i =
+\begin{pmatrix}B_{i-1}\\I_{i-1}+q_iB_{i-1}\end{pmatrix}
++
+\begin{pmatrix}
+\sqrt{q_i}&0\\q_i^{3/2}/2&q_i^{3/2}/\sqrt{12}
+\end{pmatrix}z_i,
+\qquad z_i\sim N_2(0,I).
+\]
+
+Thus irregular observed spacing is handled through \(q_i\), rather than by
+placing an exchangeable prior directly on operational-time increments.
+
+## Example data
+
+The package simulator follows the same transition used by Stan.
+
+```{r data}
+library(ibmsmooth)
+
+set.seed(42)
+t <- sort(c(0, runif(34, 0.1, 10), 10))
+rate <- ifelse((t[-1] + t[-length(t)]) / 2 < 4, 0.5,
+               ifelse((t[-1] + t[-length(t)]) / 2 < 7, 1.6, 0.7))
+truth <- simulate_ibm_clock(t, lambda = rate, seed = 43)
+y <- truth$f + rnorm(length(t), sd = 0.2)
+```
+
+## Constant clock
+
+The nonadaptive model has \(\lambda_i=\lambda_0\) in every interval. It is
+available as either `"ibm"` or `"nonadaptive"`.
+
+```{r constant-fit, eval=FALSE}
+fit_constant <- ibm_smooth(
+  t, y,
+  adaptive = "ibm",
+  log_tau = list(mu = log(0.7), sd = 0.5),
+  chains = 4,
+  iter = 2000,
+  adapt_delta = 0.95,
+  seed = 101
+)
+
+plot(fit_constant)$function_plot
+plot_clock(fit_constant, "lambda_interval")
+summary(fit_constant)
+```
+
+## Baseline clock with sparse acceleration
+
+The baseline-clock model uses
+
+\[
+\lambda_i=\lambda_0+r_i,\qquad r_i=\gamma\xi_i\geq0.
+\]
+
+It favors ordinary IBM at a common background rate and permits selected
+intervals to accumulate operational time more rapidly.
+
+```{r baseline-fit, eval=FALSE}
+fit_baseline <- ibm_smooth(
+  t, y,
+  adaptive = "baseline_clock",
+  log_tau = list(mu = log(0.5), sd = 0.5),
+  zeta = 0.1,
+  chains = 4,
+  iter = 2000,
+  adapt_delta = 0.99,
+  seed = 102
+)
+
+plot(fit_baseline)$function_plot
+plot_clock(fit_baseline, "lambda_interval")
+plot_clock(fit_baseline, "r_interval")
+```
+
+When every \(r_i=0\), this model reduces exactly to the constant-clock model.
+
+## Persistent clock with sparse changes
+
+The persistent-clock model shrinks changes in adjacent log rates:
+
+\[
+\eta_i=\eta_{i-1}+\delta_i,\qquad
+\eta_i=\log\lambda_i,
+\qquad
+\delta_i\mid\gamma,\xi_i\sim N(0,\gamma^2\xi_i^2).
+\]
+
+It favors long clock regimes and occasional transitions. The increments
+\(\delta_i\) are not multiplied by \(\Delta_i\); interval length enters only
+through \(q_i=\lambda_i\Delta_i\).
+
+```{r persistent-fit, eval=FALSE}
+fit_persistent <- ibm_smooth(
+  t, y,
+  adaptive = "persistent_clock",
+  log_tau = list(mu = log(0.7), sd = 0.5),
+  zeta = 0.1,
+  chains = 4,
+  iter = 2000,
+  adapt_delta = 0.99,
+  seed = 103
+)
+
+plot(fit_persistent)$function_plot
+plot_clock(fit_persistent, "lambda_interval")
+```
+
+## Operational state and derivatives
+
+Inside interval \(i\), the observed-time derivative is
+
+\[
+f'(t)=\lambda_iB(T(t)).
+\]
+
+At a rate jump, the left and right derivatives at a knot need not agree.
+Extract them separately rather than requesting a globally continuous
+derivative.
+
+```{r extraction, eval=FALSE}
+f_draws <- get_samples(fit_persistent, "f")
+B_draws <- get_samples(fit_persistent, "B_operational")
+left_derivative <- get_samples(fit_persistent, "fprime_left")
+right_derivative <- get_samples(fit_persistent, "fprime_right")
+
+# The unavailable outer derivative sides are returned as NA.
+stopifnot(all(is.na(left_derivative[, 1])))
+stopifnot(all(is.na(right_derivative[, ncol(right_derivative)])))
+```
+
+## Choosing an adaptive prior
+
+The models encode different notions of simplicity:
+
+* `"ibm"`: one clock rate throughout;
+* `"baseline_clock"`: sparse positive departures from a global rate;
+* `"persistent_clock"`: sparse changes from the preceding log rate.
+
+The old curvature-shrinkage implementation remains available as
+`"curvature_horseshoe"`. It has a distinct interpretation and should not be
+treated as one of the stochastic-clock priors.
+
+```{r legacy-fit, eval=FALSE}
+fit_curvature <- ibm_smooth(
+  t, y,
+  adaptive = "curvature_horseshoe",
+  chains = 4,
+  iter = 2000,
+  adapt_delta = 0.99
+)
+```
+
+Always inspect divergences, effective sample sizes, and tree-depth saturation.
+The baseline rate and adaptive scales can be weakly identified, so prior
+predictive simulation and scientifically meaningful priors are preferable to
+using sampler tuning alone.

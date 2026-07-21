@@ -10,6 +10,7 @@
 #' - "rw": random-walk prior on log(tau) across segments.
 #' - "horseshoe": horseshoe prior on local IBM process scales.
 #' - "baseline_horseshoe": horseshoe excess roughness above a positive IBM baseline.
+#' - "persistent_clock": horseshoe shrinkage on adjacent log clock-rate changes.
 #' - "rhs": regularized horseshoe prior on local IBM process scales.
 #' - "bridge": bridge prior on whitened IBM transition innovations (requires centered parameterization).
 #'
@@ -27,19 +28,23 @@
 #'   \code{get_code = TRUE} the Stan code is written to this file.
 #' @param adaptive Character; specifies if and how to use adaptive smoothing.
 #'   Options are \code{"nonadaptive"} (default), \code{"rw"}, \code{"horseshoe"},
-#'   \code{"baseline_horseshoe"}, \code{"rhs"}, or \code{"bridge"}.
+#'   \code{"baseline_clock"}, \code{"persistent_clock"},
+#'   \code{"curvature_horseshoe"}, \code{"rw"}, \code{"rhs"}, or
+#'   \code{"bridge"}. Older model names remain available as aliases.
 #' @param log_sigma List with elements \code{mu} and \code{sd} giving the prior
 #'   mean and standard deviation for \code{log(sigma)}. Defaults to
 #'   \code{list(mu = -1, sd = 1)}.
 #' @param log_tau List with elements \code{mu} and \code{sd} giving the prior
 #'   mean and standard deviation for \code{log(tau)}. Used for
-#'   \code{adaptive = "nonadaptive"}, \code{"rw"}, and
-#'   \code{"baseline_horseshoe"}. For the latter this is the prior on the
-#'   positive baseline process scale \code{tau0}. Defaults to
+#'   \code{adaptive = "nonadaptive"}, \code{"rw"},
+#'   \code{"baseline_clock"}, and \code{"persistent_clock"}. For clock
+#'   models this controls the prior for the baseline or initial clock rate.
+#'   Defaults to
 #'   \code{list(mu = -2, sd = 0.5)}.
 #' @param zeta Numeric; global shrinkage scale used by horseshoe,
-#'   baseline_horseshoe, rhs and bridge priors. In the baseline-horseshoe model
-#'   it controls only excess roughness. Default \code{0.1}.
+#'   baseline-clock, persistent-clock, rhs and bridge priors. For the
+#'   persistent clock it controls the global scale of log-rate changes.
+#'   Default \code{0.1}.
 #' @param slab_scale Numeric; slab scale for the regularized horseshoe (rhs).
 #'   Default \code{2}.
 #' @param alpha Numeric in (0,2]; exponent for bridge prior (only used when
@@ -93,7 +98,7 @@ ibm_smooth <- function(t = NULL, y = NULL,
        get_code = FALSE,
        write_to_file = NULL,
        # specify adaptivity
-       adaptive = "nonadaptive", # default is nonadaptive
+       adaptive = "nonadaptive", # constant or baseline stochastic clock
        # priors for hyperparameters
        # for nonadaptive and rw
        log_sigma = list(mu = -1, sd = 1),
@@ -109,12 +114,18 @@ ibm_smooth <- function(t = NULL, y = NULL,
        iter = 2000, chains = 4,
        cores = getOption("mc.cores", chains),
        max_treedepth = 12, adapt_delta = 0.9, ...) {
-  adaptive <- match.arg(adaptive, c("nonadaptive", "rw", "horseshoe",
-                                    "baseline_horseshoe", "rhs", "bridge"))
+  adaptive <- match.arg(adaptive, c("nonadaptive", "ibm", "baseline_clock",
+                                    "adaptive_clock", "baseline_horseshoe",
+                                    "persistent_clock",
+                                    "curvature_horseshoe", "rw", "horseshoe",
+                                    "rhs", "bridge"))
+  if (adaptive == "ibm") adaptive <- "nonadaptive"
+  if (adaptive %in% c("baseline_clock", "adaptive_clock")) adaptive <- "baseline_horseshoe"
+  if (adaptive == "curvature_horseshoe") adaptive <- "horseshoe"
   # determine centered / noncentered choice
   if (is.null(centered) && is.null(noncentered)) {
     # if neither given, default to centered
-    centered <- (adaptive == "nonadaptive")
+    centered <- FALSE
   } else if (!is.null(centered) && !is.null(noncentered)) {
     warning("`noncentered` and  `centered` both provided; using `centered`.")
     centered <- as.logical(centered) # prefer centered if both given
@@ -128,6 +139,10 @@ ibm_smooth <- function(t = NULL, y = NULL,
   }
   if (adaptive == "bridge") {
     centered <- TRUE # bridge must be centered
+  }
+  if (adaptive %in% c("nonadaptive", "baseline_horseshoe", "persistent_clock") && centered) {
+    warning("Literal stochastic-clock models use the non-centered exact transition; ignoring `centered = TRUE`.")
+    centered <- FALSE
   }
   # choose appropriate stan file
   file <- "ibm"
@@ -218,11 +233,11 @@ ibm_smooth <- function(t = NULL, y = NULL,
     log_sigma_sd = log_sigma$sd
   )
 
-  if (adaptive %in% c("nonadaptive", "rw", "baseline_horseshoe")) {
+  if (adaptive %in% c("nonadaptive", "rw", "baseline_horseshoe", "persistent_clock")) {
     stan_data$log_tau_mu <- log_tau$mu
     stan_data$log_tau_sd <- log_tau$sd
   }
-  if (adaptive %in% c("horseshoe", "baseline_horseshoe")) {
+  if (adaptive %in% c("horseshoe", "baseline_horseshoe", "persistent_clock")) {
     stan_data$zeta <- zeta
   }
   if (adaptive == "rhs") {

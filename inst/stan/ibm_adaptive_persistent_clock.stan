@@ -7,29 +7,39 @@ data {
   int<lower=0, upper=1> regular;
   real log_sigma_mu;
   real<lower=0> log_sigma_sd;
-  real log_tau_mu;               // prior for log baseline clock rate
+  real log_tau_mu;               // prior location for the initial log clock rate
   real<lower=0> log_tau_sd;
-  real<lower=0> zeta;            // half-normal scale for global acceleration
+  real<lower=0> zeta;            // half-normal scale for changes in log rate
   real<lower=0> initial_sd;
 }
 parameters {
   real log_sigma_raw;
-  real log_lambda0_raw;
+  real eta_initial_raw;
   real<lower=0> gamma_raw;
-  vector<lower=0>[T-1] local_raw;
+  vector<lower=0>[T-2] local_raw;
+  vector[T-2] z_delta;
   matrix[2, T] z_state;
 }
 transformed parameters {
   real<lower=0> sigma = exp(log_sigma_mu + log_sigma_sd * log_sigma_raw);
-  real<lower=0> lambda0 = exp(log_tau_mu + log_tau_sd * log_lambda0_raw);
+  real eta_initial = log_tau_mu + log_tau_sd * eta_initial_raw;
+  real<lower=0> lambda_initial = exp(eta_initial);
   real<lower=0> gamma = zeta * gamma_raw;
-  vector<lower=0>[T-1] r_interval = gamma * local_raw;
-  vector<lower=0>[T-1] lambda_interval = lambda0 + r_interval;
-  vector<lower=0>[T-1] q_interval = lambda_interval .* deltat;
+  vector[T-2] delta_log_rate = gamma * (local_raw .* z_delta);
+  vector[T-1] eta_interval;
+  vector<lower=0>[T-1] lambda_interval;
+  vector<lower=0>[T-1] q_interval;
   vector[T] B_operational;
   vector[T] f;
   vector[T] fprime_left;
   vector[T] fprime_right;
+
+  eta_interval[1] = eta_initial;
+  if (T > 2) {
+    for (i in 2:(T-1)) eta_interval[i] = eta_interval[i-1] + delta_log_rate[i-1];
+  }
+  lambda_interval = exp(eta_interval);
+  q_interval = lambda_interval .* deltat;
 
   B_operational[1] = initial_sd * z_state[1, 1];
   f[1] = initial_sd * z_state[2, 1];
@@ -42,6 +52,7 @@ transformed parameters {
       + 0.5 * q32 * z_state[1, i]
       + q32 * inv_sqrt(12.0) * z_state[2, i];
   }
+
   // Boundary placeholders are masked to NA by the R extractor.
   fprime_left[1] = 0;
   fprime_right[T] = 0;
@@ -50,9 +61,10 @@ transformed parameters {
 }
 model {
   log_sigma_raw ~ std_normal();
-  log_lambda0_raw ~ std_normal();
+  eta_initial_raw ~ std_normal();
   gamma_raw ~ std_normal();
   local_raw ~ student_t(1, 0, 1);
+  z_delta ~ std_normal();
   to_vector(z_state) ~ std_normal();
   for (n in 1:N_obs) y_obs[n] ~ normal(f[obs_time_idx[n]], sigma);
 }

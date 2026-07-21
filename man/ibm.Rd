@@ -10,7 +10,8 @@ ibm(
   infer_at = NULL,
   method = c("stan", "inla"),
   adaptive = FALSE,
-  stan_adaptive_method = c("horseshoe", "baseline_horseshoe", "rw", "rhs", "bridge"),
+  stan_adaptive_method = c("baseline_clock", "persistent_clock", "curvature_horseshoe",
+    "rw", "rhs", "bridge"),
   stan_horseshoe_engine = c("joint", "marginalized"),
   ...
 )
@@ -29,8 +30,9 @@ inference should be returned.}
 \code{TRUE}, fit a locally adaptive model.}
 
 \item{stan_adaptive_method}{Stan-only adaptive prior. The default is
-\code{"horseshoe"}. Use \code{"baseline_horseshoe"} for independent horseshoe
-excess roughness above a positive global IBM baseline.}
+\code{"baseline_clock"}. Use \code{"persistent_clock"} for horseshoe-shrunk
+adjacent changes in the log clock rate, or \code{"curvature_horseshoe"} for
+the legacy curvature-shrinkage model.}
 
 \item{stan_horseshoe_engine}{Stan engine used for the adaptive horseshoe
 model. \code{"joint"} retains the existing sampler; \code{"marginalized"} uses the

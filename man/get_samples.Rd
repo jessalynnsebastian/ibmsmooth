@@ -4,7 +4,12 @@
 \alias{get_samples}
 \title{Extract posterior samples from an IBM fit}
 \usage{
-get_samples(ibmfit, param = c("f", "fprime"), n_samples = NULL, ...)
+get_samples(
+  ibmfit,
+  param = c("f", "B_operational", "fprime_left", "fprime_right", "fprime"),
+  n_samples = NULL,
+  ...
+)
 }
 \arguments{
 \item{ibmfit}{An object of class \code{ibmfit}.}

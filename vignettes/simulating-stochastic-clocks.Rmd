@@ -1,0 +1,91 @@
+---
+title: "Simulating and checking stochastic clocks"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Simulating and checking stochastic clocks}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+library(ibmsmooth)
+```
+
+This vignette gives short reproducible examples for checking the operational
+time interpretation before fitting a model.
+
+## Exact transition
+
+```{r transition}
+q <- 0.8
+L <- ibm_clock_cholesky(q)
+Q <- ibm_clock_covariance(q)
+
+L %*% t(L)
+Q
+stopifnot(isTRUE(all.equal(L %*% t(L), Q)))
+```
+
+## Constant clock on an irregular grid
+
+Equal rates do not imply equal operational-time increments when observed
+interval lengths differ.
+
+```{r irregular}
+t <- c(0, 0.05, 0.4, 2.2, 2.5, 6)
+sim_constant <- simulate_ibm_clock(t, lambda = 0.7, seed = 1)
+
+data.frame(
+  delta_t = diff(t),
+  lambda = sim_constant$lambda_interval,
+  q = sim_constant$q_interval
+)
+```
+
+## Baseline acceleration
+
+```{r acceleration}
+lambda0 <- 0.5
+r <- c(0, 0, 1.5, 1.5, 0)
+sim_acceleration <- simulate_ibm_clock(
+  t,
+  lambda = lambda0 + r,
+  seed = 2
+)
+
+data.frame(
+  left = t[-length(t)],
+  right = t[-1],
+  lambda = sim_acceleration$lambda_interval,
+  q = sim_acceleration$q_interval
+)
+```
+
+## Persistent regimes and corners
+
+Here the rate changes once and then persists. The latent function stays
+continuous, while its observed-time derivative has distinct one-sided values
+at the rate change.
+
+```{r persistent}
+lambda <- c(0.4, 0.4, 1.4, 1.4, 1.4)
+sim_persistent <- simulate_ibm_clock(t, lambda = lambda, seed = 3)
+
+knot <- 3L
+c(
+  left = sim_persistent$fprime_left[knot],
+  right = sim_persistent$fprime_right[knot]
+)
+
+stopifnot(
+  sim_persistent$fprime_left[knot] ==
+    lambda[knot - 1L] * sim_persistent$B_operational[knot],
+  sim_persistent$fprime_right[knot] ==
+    lambda[knot] * sim_persistent$B_operational[knot]
+)
+```
+
+These simulations are useful for prior predictive work: generate plausible
+clock rates first, simulate the exact augmented IBM state, add an observation
+model, and then fit the clock prior that expresses the intended regularization.

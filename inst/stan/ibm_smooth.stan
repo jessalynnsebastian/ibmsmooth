@@ -1,78 +1,51 @@
 data {
-  int<lower=1> N_obs; // number of observations (including replicates if there are any)
-  int<lower=1> T; // number of latent grid points (unique times + infer_at)
-  array[N_obs] int<lower=1, upper=T> obs_time_idx;  // maps each obs to a grid index
-  vector[T-1] deltat; // time diffs on the (scaled) grid
-  vector[N_obs] y_obs; // observed y values (also scaled)
-  int<lower=0, upper=1> regular;
-
-  // gaussian lik - lognormal prior for sigma
+  int<lower=1> N_obs;
+  int<lower=2> T;
+  array[N_obs] int<lower=1, upper=T> obs_time_idx;
+  vector<lower=0>[T-1] deltat;
+  vector[N_obs] y_obs;
+  int<lower=0, upper=1> regular; // retained for API compatibility
   real log_sigma_mu;
   real<lower=0> log_sigma_sd;
-
-  // ibm - lognormal prior for tau
-  real log_tau_mu;
+  real log_tau_mu;               // prior for log clock rate (legacy data name)
   real<lower=0> log_tau_sd;
+  real<lower=0> initial_sd;
 }
-
-transformed data {
-  array[T-1] matrix[2,2] Lt;
-
-  Lt[1] = to_matrix(
-    [[sqrt(deltat[1]), 0],
-     [(deltat[1]^1.5) * 0.5, (deltat[1]^1.5) * inv_sqrt(12)]]
-  );
-
-  for (i in 2:(T-1)) {
-    if (regular == 0) {
-      Lt[i] = to_matrix(
-        [[sqrt(deltat[i]), 0],
-         [(deltat[i]^1.5) * 0.5, (deltat[i]^1.5) * inv_sqrt(12)]]
-      );
-    } else {
-      Lt[i] = Lt[1];
-    }
-  }
-}
-
 parameters {
-  real log_sigma;
-  real log_tau;
-  matrix[2, T] z;
+  real log_sigma_raw;
+  real log_lambda0_raw;
+  matrix[2, T] z_state;
 }
-
 transformed parameters {
+  real<lower=0> sigma = exp(log_sigma_mu + log_sigma_sd * log_sigma_raw);
+  real<lower=0> lambda0 = exp(log_tau_mu + log_tau_sd * log_lambda0_raw);
+  vector[T-1] lambda_interval = rep_vector(lambda0, T-1);
+  vector[T-1] q_interval = lambda_interval .* deltat;
+  vector[T] B_operational;
   vector[T] f;
-  vector[T] fprime;
+  vector[T] fprime_left;
+  vector[T] fprime_right;
 
-  real tau = exp(log_tau_mu + log_tau * log_tau_sd);
-  real sigma = exp(log_sigma_mu + log_sigma * log_sigma_sd);
-
-  // transform z to f, fprime
-  f[1] = 5 * z[2, 1];
-  fprime[1] = tau^2 * z[1, 1];
-
+  B_operational[1] = initial_sd * z_state[1, 1];
+  f[1] = initial_sd * z_state[2, 1];
   for (i in 2:T) {
-    vector[2] state =
-      [ fprime[i - 1],
-        f[i - 1] + deltat[i - 1] * fprime[i - 1] ]'
-      + tau * Lt[i - 1] * z[, i];
-
-    fprime[i] = state[1];
-    f[i] = state[2];
+    real q = q_interval[i-1];
+    real sqrt_q = sqrt(q);
+    real q32 = q * sqrt_q;
+    B_operational[i] = B_operational[i-1] + sqrt_q * z_state[1, i];
+    f[i] = f[i-1] + q * B_operational[i-1]
+      + 0.5 * q32 * z_state[1, i]
+      + q32 * inv_sqrt(12.0) * z_state[2, i];
   }
+  // Boundary placeholders are masked to NA by the R extractor.
+  fprime_left[1] = 0;
+  fprime_right[T] = 0;
+  for (i in 2:T) fprime_left[i] = lambda_interval[i-1] * B_operational[i];
+  for (i in 1:(T-1)) fprime_right[i] = lambda_interval[i] * B_operational[i];
 }
-
 model {
-  // hyperpriors
-  log_sigma ~ std_normal();
-  log_tau ~ std_normal();
-
-  // ibm noncentered
-  to_vector(z) ~ std_normal();
-
-  // likelihood (replicates just repeat obs_time_idx)
-  for (n in 1:N_obs) {
-    y_obs[n] ~ normal(f[obs_time_idx[n]], sigma);
-  }
+  log_sigma_raw ~ std_normal();
+  log_lambda0_raw ~ std_normal();
+  to_vector(z_state) ~ std_normal();
+  for (n in 1:N_obs) y_obs[n] ~ normal(f[obs_time_idx[n]], sigma);
 }
