@@ -1,0 +1,139 @@
+# IBM smoothing with INLA
+
+This vignette shows the INLA backend for integrated Brownian motion
+smoothing.
+
+The global INLA model has one diffusion-precision parameter for the IBM
+transition density. The locally adaptive model represents the log
+diffusion precision as a global log precision plus centered low-rank
+B-spline deviations that are shrunk toward zero, following the
+reduced-rank adaptive-smoothing-function idea of Yue, Simpson, Lindgren,
+and Rue (2014). On the scaled model scale, each transition uses
+
+``` math
+\begin{pmatrix}
+f'_i - f'_{i-1} \\
+f_i - f_{i-1} - h_i f'_{i-1}
+\end{pmatrix}
+\sim
+N\left\{
+\begin{pmatrix}0 \\ 0\end{pmatrix},
+\lambda_i^{-1}
+\begin{pmatrix}
+h_i & h_i^2/2 \\
+h_i^2/2 & h_i^3/3
+\end{pmatrix}
+\right\},
+```
+
+where $`\lambda_i`$ is the local diffusion precision. In the adaptive
+INLA model,
+
+``` math
+\log \lambda_i = \alpha + B_i^\top \beta,
+\qquad
+\beta_j \sim N(0, \sigma_\beta^2),
+```
+
+where $`\alpha`$ is the global log diffusion precision and the centered
+spline basis $`B_i`$ represents departures from that global precision.
+The argument `adaptive_deviation_sd` controls $`\sigma_\beta`$. Smaller
+values make the adaptive model more reluctant to depart from the global
+IBM smoother. This is the same transition model used by the Stan
+backend, where the local process scale is
+$`\tau_i = 1/\sqrt{\lambda_i}`$. The INLA implementation computes both
+the precision matrix and the normalizing constant from this transition
+density. The initial state is assigned the correlated unit-time IBM
+prior
+
+``` math
+\begin{pmatrix} f_1 \\ f'_1 \end{pmatrix}
+\sim
+N\left\{
+\begin{pmatrix}0 \\ 0\end{pmatrix},
+\texttt{initial\_sd}^2
+\begin{pmatrix}
+1/3 & 1/2 \\
+1/2 & 1
+\end{pmatrix}
+\right\}.
+```
+
+The `initial_slope_sd` argument is retained only for backward
+compatibility and is ignored by the INLA backend.
+
+## Global IBM
+
+``` r
+
+library(ibmsmooth)
+
+set.seed(1)
+t <- sort(runif(40, 0, 10))
+y <- sin(t) + rnorm(length(t), 0, 0.25)
+
+fit_inla <- ibm(
+  t = t,
+  y = y,
+  method = "inla",
+  adaptive = FALSE,
+  initial_sd = 5
+)
+
+plots <- plot(fit_inla)
+plots$function_plot
+plots$derivative_plot
+summary(fit_inla)
+```
+
+## Locally adaptive IBM
+
+``` r
+
+t <- sort(runif(40, 0, 10))
+y <- rnorm(length(t), 0, 0.25)
+y <- y + ifelse(t < 5, 0, 2)
+
+fit_inla <- ibm(
+  t = t,
+  y = y,
+  method = "inla",
+  adaptive = FALSE,
+  initial_sd = 1
+)
+
+plots <- plot(fit_inla)
+plots$function_plot
+plots$derivative_plot
+summary(fit_inla)
+
+fit_inla_adapt <- ibm(
+  t = t,
+  y = y,
+  method = "inla",
+  adaptive = TRUE,
+  n_knots = 10,
+  adaptive_deviation_sd = 1.5,
+  initial_sd = 1
+)
+
+plots <- plot(fit_inla_adapt)
+plots$function_plot
+plots$derivative_plot
+
+precision_plot <- plot_precision_curve(fit_inla_adapt, n_samples = 1000)
+precision_plot
+```
+
+The precision curve is evaluated at transition midpoints. High process
+precision corresponds to stronger local smoothing; low process precision
+corresponds to a locally more variable derivative process. The plotting
+helper uses posterior samples from
+[`get_hyperparameter_samples()`](https://jessalynnsebastian.github.io/ibmsmooth/reference/get_hyperparameter_samples.md)
+and attaches the summarized plotting data to the returned object.
+
+``` r
+
+precision_summary <- attr(precision_plot, "precision_summary")
+head(precision_summary)
+```

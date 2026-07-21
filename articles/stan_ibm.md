@@ -1,0 +1,89 @@
+# IBM smoothing with Stan
+
+This vignette shows the Stan backend for integrated Brownian motion
+smoothing.
+
+The Stan backend uses the same subordinated-IBM transition convention as
+the INLA backend. On the scaled model scale, each transition uses
+
+``` math
+\begin{pmatrix}
+f'_i - f'_{i-1} \\
+f_i - f_{i-1} - h_i f'_{i-1}
+\end{pmatrix}
+\sim
+N\left\{
+\begin{pmatrix}0 \\ 0\end{pmatrix},
+\tau_i^2
+\begin{pmatrix}
+h_i & h_i^2/2 \\
+h_i^2/2 & h_i^3/3
+\end{pmatrix}
+\right\}.
+```
+
+INLA writes the same model with process precision
+$`\lambda_i = 1/\tau_i^2`$. The Stan and INLA backends also use the same
+correlated unit-time IBM prior for the initial state,
+
+``` math
+\begin{pmatrix} f_1 \\ f'_1 \end{pmatrix}
+\sim
+N\left\{
+\begin{pmatrix}0 \\ 0\end{pmatrix},
+\texttt{initial\_sd}^2
+\begin{pmatrix}
+1/3 & 1/2 \\
+1/2 & 1
+\end{pmatrix}
+\right\}.
+```
+
+The adaptive Stan methods differ only in how they place a prior on the
+local process scales $`\tau_i`$. The INLA adaptive model instead writes
+$`\log \lambda_i = \alpha + B_i^\top\beta`$, with $`\alpha`$ as a global
+log precision and centered spline deviations $`\beta`$ shrunk toward
+zero.
+
+## Global IBM
+
+``` r
+
+library(ibmsmooth)
+
+set.seed(1)
+t <- sort(runif(40, 0, 10))
+y <- sin(t) + rnorm(length(t), 0, 0.25)
+
+fit <- ibm(t, y, method = "stan", adaptive = FALSE, chains = 2, iter = 1000,
+           initial_sd = 5)
+
+plots <- plot(fit)
+plots$function_plot
+plots$derivative_plot
+
+summary(fit)
+```
+
+## Locally adaptive IBM with a horseshoe prior
+
+``` r
+
+fit_hs <- ibm(
+  t = t,
+  y = y,
+  method = "stan",
+  adaptive = TRUE,
+  stan_adaptive_method = "horseshoe",
+  chains = 2,
+  iter = 1000,
+  initial_sd = 5
+)
+
+plots <- plot(fit_hs)
+plots$function_plot
+plots$derivative_plot
+
+plot_precision_curve(fit_hs)
+summary(fit_hs)
+```
