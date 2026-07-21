@@ -99,7 +99,9 @@ adaptive INLA fits these are returned over transition midpoints, and the
 global baseline process standard deviation and precision are also returned
 as <code>global_process_sd</code> and <code>global_process_precision</code>.</p>
 <p>For Stan fits, recognized transformed parameters such as <code>sigma</code>, <code>tau</code>, and
-<code>gamma</code> are converted from the scaled model units to the original data units.</p>
+<code>gamma</code> are converted from scaled model units. Baseline-horseshoe fits also
+report <code>baseline_process_sd</code>, <code>global_excess_sd</code>, <code>excess_process_sd</code>,
+<code>process_sd</code> (total roughness), and <code>process_variance</code>.</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

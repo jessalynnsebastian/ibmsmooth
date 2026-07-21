@@ -50,7 +50,7 @@
 <span>  infer_at <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"stan"</span>, <span class="st">"inla"</span><span class="op">)</span>,</span>
 <span>  adaptive <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  stan_adaptive_method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"horseshoe"</span>, <span class="st">"rw"</span>, <span class="st">"rhs"</span>, <span class="st">"bridge"</span><span class="op">)</span>,</span>
+<span>  stan_adaptive_method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"horseshoe"</span>, <span class="st">"baseline_horseshoe"</span>, <span class="st">"rw"</span>, <span class="st">"rhs"</span>, <span class="st">"bridge"</span><span class="op">)</span>,</span>
 <span>  stan_horseshoe_engine <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"joint"</span>, <span class="st">"marginalized"</span><span class="op">)</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -84,7 +84,8 @@ inference should be returned.</p></dd>
 
 <dt id="arg-stan-adaptive-method">stan_adaptive_method<a class="anchor" aria-label="anchor" href="#arg-stan-adaptive-method"></a></dt>
 <dd><p>Stan-only adaptive prior. The default is
-<code>"horseshoe"</code>.</p></dd>
+<code>"horseshoe"</code>. Use <code>"baseline_horseshoe"</code> for independent horseshoe
+excess roughness above a positive global IBM baseline.</p></dd>
 
 
 <dt id="arg-stan-horseshoe-engine">stan_horseshoe_engine<a class="anchor" aria-label="anchor" href="#arg-stan-horseshoe-engine"></a></dt>

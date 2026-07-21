@@ -96,6 +96,8 @@ details.
   : Plot posterior function and derivative summaries
 - [`plot_precision_curve()`](https://jessalynnsebastian.github.io/ibmsmooth/reference/plot_precision_curve.md)
   : Plot the locally adaptive process precision curve
+- [`plot_roughness_curve()`](https://jessalynnsebastian.github.io/ibmsmooth/reference/plot_roughness_curve.md)
+  : Plot baseline-horseshoe IBM roughness components
 - [`summary(`*`<ibmfit>`*`)`](https://jessalynnsebastian.github.io/ibmsmooth/reference/summary.ibmfit.md)
   : Summarize an ibmfit object
 - [`print(`*`<summary_ibmfit>`*`)`](https://jessalynnsebastian.github.io/ibmsmooth/reference/print.summary_ibmfit.md)

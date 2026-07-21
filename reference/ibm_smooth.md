@@ -65,8 +65,8 @@ ibm_smooth(
 - adaptive:
 
   Character; specifies if and how to use adaptive smoothing. Options are
-  `"nonadaptive"` (default), `"rw"`, `"horseshoe"`, `"rhs"`, or
-  `"bridge"`.
+  `"nonadaptive"` (default), `"rw"`, `"horseshoe"`,
+  `"baseline_horseshoe"`, `"rhs"`, or `"bridge"`.
 
 - log_sigma:
 
@@ -76,13 +76,16 @@ ibm_smooth(
 - log_tau:
 
   List with elements `mu` and `sd` giving the prior mean and standard
-  deviation for `log(tau)`. Used for `adaptive = "nonadaptive"` and
-  `"rw"`. Defaults to `list(mu = -2, sd = 0.5)`.
+  deviation for `log(tau)`. Used for `adaptive = "nonadaptive"`, `"rw"`,
+  and `"baseline_horseshoe"`. For the latter this is the prior on the
+  positive baseline process scale `tau0`. Defaults to
+  `list(mu = -2, sd = 0.5)`.
 
 - zeta:
 
-  Numeric; global shrinkage scale used by horseshoe, rhs and bridge
-  priors. Default `0.1`.
+  Numeric; global shrinkage scale used by horseshoe, baseline_horseshoe,
+  rhs and bridge priors. In the baseline-horseshoe model it controls
+  only excess roughness. Default `0.1`.
 
 - slab_scale:
 
@@ -164,6 +167,9 @@ This function supports several adaptive smoothing options:
 - "rw": random-walk prior on log(tau) across segments.
 
 - "horseshoe": horseshoe prior on local IBM process scales.
+
+- "baseline_horseshoe": horseshoe excess roughness above a positive IBM
+  baseline.
 
 - "rhs": regularized horseshoe prior on local IBM process scales.
 

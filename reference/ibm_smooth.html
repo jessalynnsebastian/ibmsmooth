@@ -111,7 +111,7 @@ function will return the Stan code without attempting to fit a model.</p></dd>
 <dt id="arg-adaptive">adaptive<a class="anchor" aria-label="anchor" href="#arg-adaptive"></a></dt>
 <dd><p>Character; specifies if and how to use adaptive smoothing.
 Options are <code>"nonadaptive"</code> (default), <code>"rw"</code>, <code>"horseshoe"</code>,
-<code>"rhs"</code>, or <code>"bridge"</code>.</p></dd>
+<code>"baseline_horseshoe"</code>, <code>"rhs"</code>, or <code>"bridge"</code>.</p></dd>
 
 
 <dt id="arg-log-sigma">log_sigma<a class="anchor" aria-label="anchor" href="#arg-log-sigma"></a></dt>
@@ -123,13 +123,16 @@ mean and standard deviation for <code>log(sigma)</code>. Defaults to
 <dt id="arg-log-tau">log_tau<a class="anchor" aria-label="anchor" href="#arg-log-tau"></a></dt>
 <dd><p>List with elements <code>mu</code> and <code>sd</code> giving the prior
 mean and standard deviation for <code>log(tau)</code>. Used for
-<code>adaptive = "nonadaptive"</code> and <code>"rw"</code>. Defaults to
+<code>adaptive = "nonadaptive"</code>, <code>"rw"</code>, and
+<code>"baseline_horseshoe"</code>. For the latter this is the prior on the
+positive baseline process scale <code>tau0</code>. Defaults to
 <code>list(mu = -2, sd = 0.5)</code>.</p></dd>
 
 
 <dt id="arg-zeta">zeta<a class="anchor" aria-label="anchor" href="#arg-zeta"></a></dt>
-<dd><p>Numeric; global shrinkage scale used by horseshoe, rhs and
-bridge priors. Default <code>0.1</code>.</p></dd>
+<dd><p>Numeric; global shrinkage scale used by horseshoe,
+baseline_horseshoe, rhs and bridge priors. In the baseline-horseshoe model
+it controls only excess roughness. Default <code>0.1</code>.</p></dd>
 
 
 <dt id="arg-slab-scale">slab_scale<a class="anchor" aria-label="anchor" href="#arg-slab-scale"></a></dt>
@@ -206,6 +209,7 @@ used: <code>y_raw</code>, <code>y_mean</code>, <code>y_sd</code>, <code>t_raw</c
     <p>This function supports several adaptive smoothing options:</p><ul><li><p>"nonadaptive" (default): single global smoothing parameter (tau).</p></li>
 <li><p>"rw": random-walk prior on log(tau) across segments.</p></li>
 <li><p>"horseshoe": horseshoe prior on local IBM process scales.</p></li>
+<li><p>"baseline_horseshoe": horseshoe excess roughness above a positive IBM baseline.</p></li>
 <li><p>"rhs": regularized horseshoe prior on local IBM process scales.</p></li>
 <li><p>"bridge": bridge prior on whitened IBM transition innovations (requires centered parameterization).</p></li>
 </ul><p>The function rescales <code>y</code> to zero mean and unit variance and rescales

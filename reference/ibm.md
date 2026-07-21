@@ -11,7 +11,7 @@ ibm(
   infer_at = NULL,
   method = c("stan", "inla"),
   adaptive = FALSE,
-  stan_adaptive_method = c("horseshoe", "rw", "rhs", "bridge"),
+  stan_adaptive_method = c("horseshoe", "baseline_horseshoe", "rw", "rhs", "bridge"),
   stan_horseshoe_engine = c("joint", "marginalized"),
   ...
 )
@@ -43,7 +43,9 @@ ibm(
 
 - stan_adaptive_method:
 
-  Stan-only adaptive prior. The default is `"horseshoe"`.
+  Stan-only adaptive prior. The default is `"horseshoe"`. Use
+  `"baseline_horseshoe"` for independent horseshoe excess roughness
+  above a positive global IBM baseline.
 
 - stan_horseshoe_engine:
 

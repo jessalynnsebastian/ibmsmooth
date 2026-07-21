@@ -5,7 +5,7 @@ articles:
   inla_ibm: inla_ibm.html
   marginalized_horseshoe_comparison: marginalized_horseshoe_comparison.html
   stan_ibm: stan_ibm.html
-last_built: 2026-07-21T18:43Z
+last_built: 2026-07-21T21:15Z
 urls:
   reference: https://jessalynnsebastian.github.io/ibmsmooth/reference
   article: https://jessalynnsebastian.github.io/ibmsmooth/articles

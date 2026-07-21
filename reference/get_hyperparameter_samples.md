@@ -58,5 +58,7 @@ standard deviation and precision are also returned as
 `global_process_sd` and `global_process_precision`.
 
 For Stan fits, recognized transformed parameters such as `sigma`, `tau`,
-and `gamma` are converted from the scaled model units to the original
-data units.
+and `gamma` are converted from scaled model units. Baseline-horseshoe
+fits also report `baseline_process_sd`, `global_excess_sd`,
+`excess_process_sd`, `process_sd` (total roughness), and
+`process_variance`.
