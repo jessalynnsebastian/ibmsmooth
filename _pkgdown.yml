@@ -1,0 +1,26 @@
+url: https://jessalynnsebastian.github.io/ibmsmooth/
+
+template:
+  bootstrap: 5
+
+navbar:
+  structure:
+    left: [intro, reference, articles]
+    right: [search, github]
+
+reference:
+  - title: Fit models
+    contents:
+      - ibm
+      - ibm_smooth
+      - ibm_inla_fit
+      - ibm_horseshoe_marginalized
+      - validate_marginalized_horseshoe
+  - title: Summarize posterior draws
+    contents:
+      - starts_with("get_")
+  - title: Plot and print results
+    contents:
+      - starts_with("plot")
+      - starts_with("summary")
+      - starts_with("print")
