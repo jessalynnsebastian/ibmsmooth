@@ -2,27 +2,22 @@
 % Please edit documentation in R/postprocess.R
 \name{summary.ibmfit}
 \alias{summary.ibmfit}
-\title{Summarize an ibmfit object}
+\title{Summarize an IBM fit}
 \usage{
-\method{summary}{ibmfit}(object, ..., n_samples = 1000, probs = c(0.025, 0.1, 0.5, 0.9, 0.975))
+\method{summary}{ibmfit}(object, ..., n_samples = 1000, probs = c(0.025, 0.5, 0.975))
 }
 \arguments{
-\item{object}{An object of class \code{"ibmfit"}.}
+\item{object}{An \code{ibmfit} object.}
 
-\item{...}{Additional arguments. Currently passed to curve-summary methods.}
+\item{...}{Unused.}
 
-\item{n_samples}{Number of posterior samples to draw for INLA summaries. For
-Stan fits, existing MCMC draws are used; if \code{n_samples} is smaller than the
-number of available draws, the first \code{n_samples} draws are used.}
+\item{n_samples}{Maximum number of draws.}
 
-\item{probs}{Numeric vector of posterior probabilities to summarize.}
+\item{probs}{Posterior probabilities.}
 }
 \value{
-A list with components \code{curve} and \code{hyperparameters}.
+An object of class \code{summary_ibmfit}.
 }
 \description{
-Compute pointwise posterior summaries for the latent function, its
-derivative, and the available model hyperparameters. Unlike a scalar
-parameter summary, the curve summaries are returned at every point of the
-latent time grid.
+Summarize an IBM fit
 }

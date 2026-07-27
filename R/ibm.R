@@ -1,57 +1,58 @@
-#' Unified interface for integrated Brownian motion smoothing
+#' Fit an integrated Brownian motion smoother
 #'
-#' Fit an integrated Brownian motion smoother using either Stan or INLA.
+#' Fits either ordinary integrated Brownian motion (IBM) with one diffusion
+#' scale or the locally adaptive IBM described by
+#' \eqn{df'(t)=\gamma\xi(t)dW(t)}, \eqn{df(t)=f'(t)dt}.  In the adaptive model,
+#' each interval has a half-Cauchy local scale \eqn{\xi_j}.
 #'
-#' @param t Numeric vector of time points.
-#' @param y Numeric vector of observations at times `t`.
-#' @param infer_at Optional numeric vector of additional time points at which
-#'   inference should be returned.
-#' @param method Computational backend, either `"stan"` or `"inla"`.
-#' @param adaptive Logical. If `FALSE`, use a single smoothness parameter. If
-#'   `TRUE`, fit a locally adaptive model.
-#' @param stan_adaptive_method Stan-only adaptive prior. The default is
-#'   `"baseline_clock"`. Use `"persistent_clock"` for horseshoe-shrunk
-#'   adjacent changes in the log clock rate, or `"curvature_horseshoe"` for
-#'   the legacy curvature-shrinkage model.
-#' @param stan_horseshoe_engine Stan engine used for the adaptive horseshoe
-#'   model. `"joint"` retains the existing sampler; `"marginalized"` uses the
-#'   Gaussian-data Kalman marginalization and a simulation smoother.
-#' @param ... Additional arguments passed to `ibm_smooth()` or `ibm_inla_fit()`.
+#' @param t Numeric observation locations.
+#' @param y Numeric observations. Replicates at the same location are allowed.
+#' @param infer_at Optional additional locations at which to infer the state.
+#' @param adaptive Logical; use locally adaptive IBM when `TRUE`.
+#' @param smoothing_prior A character string containing valid Stan code for the
+#'   prior on the positive ordinary-IBM smoothing parameter `tau`. For example,
+#'   `"tau ~ normal(0, 0.5);"` or `"tau ~ student_t(3, 0, 1);"`. This is used
+#'   only when `adaptive = FALSE`.
+#' @param global_scale Positive half-Cauchy scale for `gamma` in the adaptive
+#'   global--local prior.
+#' @param log_sigma List with `mu` and positive `sd` for the log observation
+#'   standard deviation on the internally standardized response scale.
+#' @param initial_sd Positive prior standard deviation for the initial function
+#'   value and derivative on the internally standardized scale.
+#' @param iter,chains,cores Stan sampling controls.
+#' @param max_treedepth,adapt_delta Stan HMC controls.
+#' @param get_code If `TRUE`, return the selected Stan program rather than fit.
+#' @param ... Additional arguments passed to [rstan::stan()].
 #'
-#' @return An object of class `ibmfit`.
+#' @details
+#' Time is shifted and divided by its mean grid spacing and the response is
+#' standardized before fitting. Consequently, `smoothing_prior` is expressed
+#' on that stable internal scale. Natural-scale draws are returned by the
+#' extraction helpers.
+#'
+#' The adaptive transition over an interval of length \eqn{\Delta_j} is exactly
+#' bivariate normal with mean
+#' \eqn{(f'_j, f_j+\Delta_j f'_j)} and covariance
+#' \eqn{\gamma^2\xi_j^2 Q(\Delta_j)}, where
+#' \eqn{Q(\Delta)=((\Delta,\Delta^2/2),(\Delta^2/2,\Delta^3/3))}.
+#'
+#' @return An object of class `ibmfit`, or Stan code when `get_code = TRUE`.
 #' @export
-ibm <- function(t, y, infer_at = NULL, method = c("stan", "inla"),
-                adaptive = FALSE,
-                stan_adaptive_method = c("baseline_clock", "persistent_clock",
-                                         "curvature_horseshoe", "rw", "rhs", "bridge"),
-                stan_horseshoe_engine = c("joint", "marginalized"),
-                ...) {
-  method <- match.arg(method)
-
-  if (method == "stan") {
-    stan_adaptive_method <- match.arg(stan_adaptive_method)
-    stan_horseshoe_engine <- match.arg(stan_horseshoe_engine)
-    if (isTRUE(adaptive) && stan_adaptive_method == "curvature_horseshoe" &&
-        stan_horseshoe_engine == "marginalized") {
-      return(ibm_horseshoe_marginalized(
-        t = t, y = y, infer_at = infer_at, ...
-      ))
-    }
-    stan_adapt <- if (isTRUE(adaptive)) stan_adaptive_method else "nonadaptive"
-    return(ibm_smooth(
-      t = t,
-      y = y,
-      infer_at = infer_at,
-      adaptive = stan_adapt,
-      ...
-    ))
-  }
-
-  ibm_inla_fit(
-    t = t,
-    y = y,
-    infer_at = infer_at,
-    adaptive = adaptive,
-    ...
+ibm <- function(t = NULL, y = NULL, infer_at = NULL, adaptive = FALSE,
+                smoothing_prior = "tau ~ lognormal(-2, 0.5);",
+                global_scale = 0.1,
+                log_sigma = list(mu = -1, sd = 1),
+                initial_sd = 5,
+                iter = 2000, chains = 4,
+                cores = getOption("mc.cores", chains),
+                max_treedepth = 12, adapt_delta = 0.9,
+                get_code = FALSE, ...) {
+  .ibm_fit(
+    t = t, y = y, infer_at = infer_at, adaptive = adaptive,
+    smoothing_prior = smoothing_prior, global_scale = global_scale,
+    log_sigma = log_sigma, initial_sd = initial_sd,
+    iter = iter, chains = chains, cores = cores,
+    max_treedepth = max_treedepth, adapt_delta = adapt_delta,
+    get_code = get_code, ...
   )
 }

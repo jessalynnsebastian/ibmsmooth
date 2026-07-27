@@ -2,27 +2,21 @@
 % Please edit documentation in R/postprocess.R
 \name{get_samples}
 \alias{get_samples}
-\title{Extract posterior samples from an IBM fit}
+\title{Extract posterior samples}
 \usage{
-get_samples(
-  ibmfit,
-  param = c("f", "B_operational", "fprime_left", "fprime_right", "fprime"),
-  n_samples = NULL,
-  ...
-)
+get_samples(ibmfit, param = c("f", "fprime"), n_samples = NULL)
 }
 \arguments{
-\item{ibmfit}{An object of class \code{ibmfit}.}
+\item{ibmfit}{An \code{ibmfit} object.}
 
-\item{param}{Character, either \code{"f"} or \code{"fprime"}.}
+\item{param}{Stan parameter name. Common choices are \code{"f"}, \code{"fprime"},
+\code{"sigma"}, \code{"tau"}, \code{"gamma"}, \code{"xi"}, and \code{"lambda_interval"}.}
 
-\item{n_samples}{Optional number of posterior draws to return.}
-
-\item{...}{Additional arguments passed to \code{get_samples_inla()} for INLA fits.}
+\item{n_samples}{Maximum number of draws; \code{NULL} keeps all draws.}
 }
 \value{
-A matrix of posterior samples.
+A matrix with posterior draws in rows.
 }
 \description{
-Extract posterior samples from an IBM fit
+Extract posterior samples
 }

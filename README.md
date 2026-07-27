@@ -1,15 +1,66 @@
 # ibmsmooth
 
-Note that this is a _work in progress_!
+`ibmsmooth` fits integrated Brownian motion smoothers for Gaussian observations
+using Stan. The package intentionally contains two models:
 
-`ibmsmooth` fits global and locally adaptive integrated Brownian motion smoothers for Gaussian observations using Stan.
+- ordinary IBM with one positive smoothing parameter and a user-supplied Stan
+  prior for that parameter; and
+- locally adaptive IBM with horseshoe global--local shrinkage on the derivative
+  diffusion rate.
+
+For locations \(t_j<t_{j+1}\), \(\Delta_j=t_{j+1}-t_j\), and state
+\(x_j=(f'(t_j),f(t_j))^\mathsf T\), both models use the exact transition
+
+\[
+x_{j+1}\mid x_j,\lambda_j \sim
+N_2\left[
+\begin{pmatrix}f'(t_j)\\f(t_j)+\Delta_jf'(t_j)\end{pmatrix},
+\lambda_j
+\begin{pmatrix}
+\Delta_j & \Delta_j^2/2\\
+\Delta_j^2/2 & \Delta_j^3/3
+\end{pmatrix}
+\right].
+\]
+
+Ordinary IBM sets \(\lambda_j=\tau^2\). The adaptive model sets
+\(\lambda_j=\gamma^2\xi_j^2\), with
+\(\xi_j\sim\mathrm{C}^+(0,1)\) and
+\(\gamma\sim\mathrm{C}^+(0,\texttt{global_scale})\).
 
 ## Installation
 
 ```r
-remotes::install_github("jessalynsebastian/ibmsmooth")
+remotes::install_github("jessalynnsebastian/ibmsmooth")
 ```
+
+## Examples
+
+```r
+library(ibmsmooth)
+
+fit <- ibm(t, y)
+
+# Any valid Stan prior statement involving the positive parameter `tau`.
+fit_half_t <- ibm(
+  t, y,
+  smoothing_prior = "tau ~ student_t(3, 0, 0.5);"
+)
+
+fit_adaptive <- ibm(
+  t, y,
+  adaptive = TRUE,
+  global_scale = 0.1
+)
+
+plot(fit_adaptive)
+plot_diffusion(fit_adaptive)
+```
+
+The data are standardized internally, so custom smoothing priors are specified
+on the standardized model scale. Extraction functions transform posterior
+draws back to the original response and time scales.
 
 ## License
 
-This project is released under the MIT license. See [LICENSE](LICENSE) for details.
+This project is released under the MIT license. See [LICENSE](LICENSE).

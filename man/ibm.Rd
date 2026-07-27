@@ -2,47 +2,75 @@
 % Please edit documentation in R/ibm.R
 \name{ibm}
 \alias{ibm}
-\title{Unified interface for integrated Brownian motion smoothing}
+\title{Fit an integrated Brownian motion smoother}
 \usage{
 ibm(
-  t,
-  y,
+  t = NULL,
+  y = NULL,
   infer_at = NULL,
-  method = c("stan", "inla"),
   adaptive = FALSE,
-  stan_adaptive_method = c("baseline_clock", "persistent_clock", "curvature_horseshoe",
-    "rw", "rhs", "bridge"),
-  stan_horseshoe_engine = c("joint", "marginalized"),
+  smoothing_prior = "tau ~ lognormal(-2, 0.5);",
+  global_scale = 0.1,
+  log_sigma = list(mu = -1, sd = 1),
+  initial_sd = 5,
+  iter = 2000,
+  chains = 4,
+  cores = getOption("mc.cores", chains),
+  max_treedepth = 12,
+  adapt_delta = 0.9,
+  get_code = FALSE,
   ...
 )
 }
 \arguments{
-\item{t}{Numeric vector of time points.}
+\item{t}{Numeric observation locations.}
 
-\item{y}{Numeric vector of observations at times \code{t}.}
+\item{y}{Numeric observations. Replicates at the same location are allowed.}
 
-\item{infer_at}{Optional numeric vector of additional time points at which
-inference should be returned.}
+\item{infer_at}{Optional additional locations at which to infer the state.}
 
-\item{method}{Computational backend, either \code{"stan"} or \code{"inla"}.}
+\item{adaptive}{Logical; use locally adaptive IBM when \code{TRUE}.}
 
-\item{adaptive}{Logical. If \code{FALSE}, use a single smoothness parameter. If
-\code{TRUE}, fit a locally adaptive model.}
+\item{smoothing_prior}{A character string containing valid Stan code for the
+prior on the positive ordinary-IBM smoothing parameter \code{tau}. For example,
+\code{"tau ~ normal(0, 0.5);"} or \code{"tau ~ student_t(3, 0, 1);"}. This is used
+only when \code{adaptive = FALSE}.}
 
-\item{stan_adaptive_method}{Stan-only adaptive prior. The default is
-\code{"baseline_clock"}. Use \code{"persistent_clock"} for horseshoe-shrunk
-adjacent changes in the log clock rate, or \code{"curvature_horseshoe"} for
-the legacy curvature-shrinkage model.}
+\item{global_scale}{Positive half-Cauchy scale for \code{gamma} in the adaptive
+global--local prior.}
 
-\item{stan_horseshoe_engine}{Stan engine used for the adaptive horseshoe
-model. \code{"joint"} retains the existing sampler; \code{"marginalized"} uses the
-Gaussian-data Kalman marginalization and a simulation smoother.}
+\item{log_sigma}{List with \code{mu} and positive \code{sd} for the log observation
+standard deviation on the internally standardized response scale.}
 
-\item{...}{Additional arguments passed to \code{ibm_smooth()} or \code{ibm_inla_fit()}.}
+\item{initial_sd}{Positive prior standard deviation for the initial function
+value and derivative on the internally standardized scale.}
+
+\item{iter, chains, cores}{Stan sampling controls.}
+
+\item{max_treedepth, adapt_delta}{Stan HMC controls.}
+
+\item{get_code}{If \code{TRUE}, return the selected Stan program rather than fit.}
+
+\item{...}{Additional arguments passed to \code{\link[rstan:stan]{rstan::stan()}}.}
 }
 \value{
-An object of class \code{ibmfit}.
+An object of class \code{ibmfit}, or Stan code when \code{get_code = TRUE}.
 }
 \description{
-Fit an integrated Brownian motion smoother using either Stan or INLA.
+Fits either ordinary integrated Brownian motion (IBM) with one diffusion
+scale or the locally adaptive IBM described by
+\eqn{df'(t)=\gamma\xi(t)dW(t)}, \eqn{df(t)=f'(t)dt}.  In the adaptive model,
+each interval has a half-Cauchy local scale \eqn{\xi_j}.
+}
+\details{
+Time is shifted and divided by its mean grid spacing and the response is
+standardized before fitting. Consequently, \code{smoothing_prior} is expressed
+on that stable internal scale. Natural-scale draws are returned by the
+extraction helpers.
+
+The adaptive transition over an interval of length \eqn{\Delta_j} is exactly
+bivariate normal with mean
+\eqn{(f'_j, f_j+\Delta_j f'_j)} and covariance
+\eqn{\gamma^2\xi_j^2 Q(\Delta_j)}, where
+\eqn{Q(\Delta)=((\Delta,\Delta^2/2),(\Delta^2/2,\Delta^3/3))}.
 }

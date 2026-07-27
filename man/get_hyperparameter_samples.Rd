@@ -7,45 +7,19 @@
 get_hyperparameter_samples(
   ibmfit,
   n_samples = 1000,
-  format = c("long", "wide"),
-  natural = TRUE,
-  include_internal = FALSE
+  format = c("long", "wide")
 )
 }
 \arguments{
-\item{ibmfit}{An object of class \code{ibmfit}.}
+\item{ibmfit}{An \code{ibmfit} object.}
 
-\item{n_samples}{Number of samples to draw for INLA fits, or maximum number
-of Stan draws to keep. Use \code{NULL} to keep all Stan draws.}
+\item{n_samples}{Maximum number of draws.}
 
-\item{format}{Output format, either \code{"long"} or \code{"wide"}.}
-
-\item{natural}{Logical. If \code{TRUE}, return quantities transformed to the
-original response/time scale whenever possible. If \code{FALSE}, return internal
-backend hyperparameters.}
-
-\item{include_internal}{Logical. If \code{TRUE} and \code{natural = TRUE}, also include
-internal backend hyperparameters.}
+\item{format}{Either \code{"long"} or \code{"wide"}.}
 }
 \value{
-A data frame of hyperparameter samples.
+A data frame.
 }
 \description{
-Extract posterior samples for model hyperparameters. By default, returned
-quantities are transformed to the original response and time scales.
-}
-\details{
-For INLA fits, hyperparameters are sampled with \code{intern = TRUE}, so the
-Gaussian likelihood hyperparameter is log precision and the rgeneric field
-hyperparameters are log diffusion precisions on the scaled model scale. On
-the natural scale this function
-returns the implied IBM process standard deviation and precision. For
-adaptive INLA fits these are returned over transition midpoints, and the
-global baseline process standard deviation and precision are also returned
-as \code{global_process_sd} and \code{global_process_precision}.
-
-For Stan fits, recognized transformed parameters such as \code{sigma}, \code{tau}, and
-\code{gamma} are converted from scaled model units. Baseline-horseshoe fits also
-report \code{baseline_process_sd}, \code{global_excess_sd}, \code{excess_process_sd},
-\code{process_sd} (total roughness), and \code{process_variance}.
+Extract posterior hyperparameter samples
 }

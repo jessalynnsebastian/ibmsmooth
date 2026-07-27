@@ -2,18 +2,18 @@
 % Please edit documentation in R/postprocess.R
 \name{print.summary_ibmfit}
 \alias{print.summary_ibmfit}
-\title{Print an ibmfit summary}
+\title{Print an IBM fit summary}
 \usage{
 \method{print}{summary_ibmfit}(x, ...)
 }
 \arguments{
-\item{x}{An object returned by \code{summary.ibmfit()}.}
+\item{x}{A \code{summary_ibmfit} object.}
 
-\item{...}{Additional arguments, currently unused.}
+\item{...}{Unused.}
 }
 \value{
-The input object, invisibly.
+\code{x}, invisibly.
 }
 \description{
-Print an ibmfit summary
+Print an IBM fit summary
 }

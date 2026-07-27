@@ -15,29 +15,23 @@ plot_curve(
 )
 }
 \arguments{
-\item{t_unique}{Numeric vector of time points on the latent grid.}
+\item{t_unique}{Latent-grid locations.}
 
-\item{f_samples}{Matrix of posterior samples for the latent function, with
-rows representing posterior draws and columns representing time points.}
+\item{f_samples}{Posterior function draws, with draws in rows.}
 
-\item{fprime_samples}{Optional matrix of posterior samples for the derivative,
-with rows representing posterior draws and columns representing time points.}
+\item{fprime_samples}{Optional posterior derivative draws.}
 
-\item{dat_orig}{Optional data frame containing observed data with columns
-\code{t} and \code{y}.}
+\item{dat_orig}{Optional data frame with \code{t} and \code{y}.}
 
-\item{truth}{Optional vector, list, or data frame containing truth values to
-overlay. Lists or data frames may contain \code{truth} and \code{deriv}.}
+\item{truth}{Optional list with \code{f} and/or \code{fprime}.}
 
-\item{titles}{Optional character vector of length one or two giving titles
-for the function and derivative plots.}
+\item{titles}{Optional two plot titles.}
 
-\item{...}{Additional arguments, currently unused.}
+\item{...}{Unused.}
 }
 \value{
-A list containing one or two ggplot objects.
+A list of ggplot objects.
 }
 \description{
-Construct ggplot objects showing posterior summaries for the latent function
-and, optionally, its derivative.
+Plot posterior function and derivative summaries
 }

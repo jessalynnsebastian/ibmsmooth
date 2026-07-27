@@ -12,22 +12,17 @@ get_curve_samples(
 )
 }
 \arguments{
-\item{ibmfit}{An object of class \code{ibmfit}.}
+\item{ibmfit}{An \code{ibmfit} object.}
 
-\item{param}{Character. One of \code{"f"}, \code{"fprime"}, or \code{"both"}.}
+\item{param}{One of \code{"f"}, \code{"fprime"}, or \code{"both"}.}
 
-\item{n_samples}{Number of samples to use for INLA fits, or maximum number
-of MCMC draws to keep for Stan fits. Use \code{NULL} to keep all Stan draws.}
+\item{n_samples}{Maximum number of draws.}
 
-\item{format}{Output format, either \code{"matrix"} or \code{"long"}.}
+\item{format}{Either \code{"matrix"} or \code{"long"}.}
 }
 \value{
-If \code{format = "matrix"} and one parameter is requested, a posterior
-sample matrix with rows as draws and columns as time points. If both
-parameters are requested, a list of two matrices. If \code{format = "long"}, a
-data frame with columns \code{draw}, \code{t}, \code{parameter}, and \code{value}.
+A matrix, list of matrices, or long data frame.
 }
 \description{
-Extract posterior samples for the latent function and/or derivative over the
-full latent grid.
+Extract posterior curve samples
 }

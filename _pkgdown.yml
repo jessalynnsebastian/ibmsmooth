@@ -13,14 +13,13 @@ reference:
     contents:
       - ibm
       - ibm_smooth
-      - ibm_inla_fit
-      - ibm_horseshoe_marginalized
-      - validate_marginalized_horseshoe
-  - title: Summarize posterior draws
+  - title: Exact IBM transitions and simulation
+    contents:
+      - ibm_transition_covariance
+      - simulate_ibm
+  - title: Summarize and plot
     contents:
       - starts_with("get_")
-  - title: Plot and print results
-    contents:
       - starts_with("plot")
       - starts_with("summary")
       - starts_with("print")
