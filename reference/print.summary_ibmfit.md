@@ -1,6 +1,6 @@
-# Print an ibmfit summary
+# Print an IBM fit summary
 
-Print an ibmfit summary
+Print an IBM fit summary
 
 ## Usage
 
@@ -13,13 +13,12 @@ print(x, ...)
 
 - x:
 
-  An object returned by
-  [`summary.ibmfit()`](https://jessalynnsebastian.github.io/ibmsmooth/reference/summary.ibmfit.md).
+  A `summary_ibmfit` object.
 
 - ...:
 
-  Additional arguments, currently unused.
+  Unused.
 
 ## Value
 
-The input object, invisibly.
+`x`, invisibly.

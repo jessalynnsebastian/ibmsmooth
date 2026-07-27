@@ -1,33 +1,28 @@
-# Extract posterior samples from an IBM fit
+# Extract posterior samples
 
-Extract posterior samples from an IBM fit
+Extract posterior samples
 
 ## Usage
 
 ``` r
-get_samples(ibmfit, param = c("f", "fprime"), n_samples = NULL, ...)
+get_samples(ibmfit, param = c("f", "fprime"), n_samples = NULL)
 ```
 
 ## Arguments
 
 - ibmfit:
 
-  An object of class `ibmfit`.
+  An `ibmfit` object.
 
 - param:
 
-  Character, either `"f"` or `"fprime"`.
+  Stan parameter name. Common choices are `"f"`, `"fprime"`, `"sigma"`,
+  `"tau"`, `"gamma"`, `"xi"`, and `"lambda_interval"`.
 
 - n_samples:
 
-  Optional number of posterior draws to return.
-
-- ...:
-
-  Additional arguments passed to
-  [`get_samples_inla()`](https://jessalynnsebastian.github.io/ibmsmooth/reference/get_samples_inla.md)
-  for INLA fits.
+  Maximum number of draws; `NULL` keeps all draws.
 
 ## Value
 
-A matrix of posterior samples.
+A matrix with posterior draws in rows.

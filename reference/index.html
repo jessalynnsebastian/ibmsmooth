@@ -18,9 +18,8 @@
       <ul class="navbar-nav me-auto"><li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/inla_ibm.html">IBM smoothing with INLA</a></li>
-    <li><a class="dropdown-item" href="../articles/marginalized_horseshoe_comparison.html">Prototype: marginalized Gaussian horseshoe IBM</a></li>
-    <li><a class="dropdown-item" href="../articles/stan_ibm.html">IBM smoothing with Stan</a></li>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/models.html">Ordinary and locally adaptive IBM smoothing</a></li>
+    <li><a class="dropdown-item" href="../articles/simulating-ibm.html">Simulating integrated Brownian motion</a></li>
   </ul></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
@@ -51,37 +50,39 @@
           <code><a href="ibm.html">ibm()</a></code>
 
         </dt>
-        <dd>Unified interface for integrated Brownian motion smoothing</dd>
+        <dd>Fit an integrated Brownian motion smoother</dd>
 
         <dt>
 
           <code><a href="ibm_smooth.html">ibm_smooth()</a></code>
 
         </dt>
-        <dd>Fit an integrated Brownian motion (IBM) smoother using Stan</dd>
-
-        <dt>
-
-          <code><a href="ibm_inla_fit.html">ibm_inla_fit()</a></code>
-
-        </dt>
-        <dd>Fit an integrated Brownian motion smoother using INLA</dd>
-
-        <dt>
-
-          <code><a href="ibm_horseshoe_marginalized.html">ibm_horseshoe_marginalized()</a></code>
-
-        </dt>
-        <dd>Fit a marginalized Gaussian horseshoe IBM</dd>
-
-        <dt>
-
-          <code><a href="validate_marginalized_horseshoe.html">validate_marginalized_horseshoe()</a></code>
-
-        </dt>
-        <dd>Validate the marginalized Kalman likelihood against a dense Gaussian result</dd>
+        <dd>Fit an IBM smoother using Stan</dd>
       </dl></div><div class="section level2">
-      <h2 id="summarize-posterior-draws">Summarize posterior draws<a class="anchor" aria-label="anchor" href="#summarize-posterior-draws"></a></h2>
+      <h2 id="exact-ibm-transitions-and-simulation">Exact IBM transitions and simulation<a class="anchor" aria-label="anchor" href="#exact-ibm-transitions-and-simulation"></a></h2>
+
+
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="ibm_transition_covariance.html">ibm_transition_covariance()</a></code> <code><a href="ibm_transition_covariance.html">ibm_transition_cholesky()</a></code>
+
+        </dt>
+        <dd>Integrated Brownian motion transition matrices</dd>
+
+        <dt>
+
+          <code><a href="simulate_ibm.html">simulate_ibm()</a></code>
+
+        </dt>
+        <dd>Simulate integrated Brownian motion with interval-specific diffusion</dd>
+      </dl></div><div class="section level2">
+      <h2 id="summarize-and-plot">Summarize and plot<a class="anchor" aria-label="anchor" href="#summarize-and-plot"></a></h2>
 
 
 
@@ -123,30 +124,14 @@
           <code><a href="get_samples.html">get_samples()</a></code>
 
         </dt>
-        <dd>Extract posterior samples from an IBM fit</dd>
+        <dd>Extract posterior samples</dd>
 
         <dt>
-
-          <code><a href="get_samples_inla.html">get_samples_inla()</a></code>
-
-        </dt>
-        <dd>Extract posterior samples from an INLA fit</dd>
-      </dl></div><div class="section level2">
-      <h2 id="plot-and-print-results">Plot and print results<a class="anchor" aria-label="anchor" href="#plot-and-print-results"></a></h2>
-
-
-
-      <dl></dl></div><div class="section level2">
-
-
-
-
-      <dl><dt>
 
           <code><a href="plot.ibmfit.html">plot(<i>&lt;ibmfit&gt;</i>)</a></code>
 
         </dt>
-        <dd>Plot method for ibmfit objects</dd>
+        <dd>Plot an integrated Brownian motion fit</dd>
 
         <dt>
 
@@ -157,31 +142,24 @@
 
         <dt>
 
-          <code><a href="plot_precision_curve.html">plot_precision_curve()</a></code>
+          <code><a href="plot_diffusion.html">plot_diffusion()</a></code>
 
         </dt>
-        <dd>Plot the locally adaptive process precision curve</dd>
-
-        <dt>
-
-          <code><a href="plot_roughness_curve.html">plot_roughness_curve()</a></code>
-
-        </dt>
-        <dd>Plot baseline-horseshoe IBM roughness components</dd>
+        <dd>Plot interval-specific diffusion rates</dd>
 
         <dt>
 
           <code><a href="summary.ibmfit.html">summary(<i>&lt;ibmfit&gt;</i>)</a></code>
 
         </dt>
-        <dd>Summarize an ibmfit object</dd>
+        <dd>Summarize an IBM fit</dd>
 
         <dt>
 
           <code><a href="print.summary_ibmfit.html">print(<i>&lt;summary_ibmfit&gt;</i>)</a></code>
 
         </dt>
-        <dd>Print an ibmfit summary</dd>
+        <dd>Print an IBM fit summary</dd>
       </dl></div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>

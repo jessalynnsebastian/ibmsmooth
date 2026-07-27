@@ -1,7 +1,6 @@
 # Plot posterior function and derivative summaries
 
-Construct ggplot objects showing posterior summaries for the latent
-function and, optionally, its derivative.
+Plot posterior function and derivative summaries
 
 ## Usage
 
@@ -21,36 +20,32 @@ plot_curve(
 
 - t_unique:
 
-  Numeric vector of time points on the latent grid.
+  Latent-grid locations.
 
 - f_samples:
 
-  Matrix of posterior samples for the latent function, with rows
-  representing posterior draws and columns representing time points.
+  Posterior function draws, with draws in rows.
 
 - fprime_samples:
 
-  Optional matrix of posterior samples for the derivative, with rows
-  representing posterior draws and columns representing time points.
+  Optional posterior derivative draws.
 
 - dat_orig:
 
-  Optional data frame containing observed data with columns `t` and `y`.
+  Optional data frame with `t` and `y`.
 
 - truth:
 
-  Optional vector, list, or data frame containing truth values to
-  overlay. Lists or data frames may contain `truth` and `deriv`.
+  Optional list with `f` and/or `fprime`.
 
 - titles:
 
-  Optional character vector of length one or two giving titles for the
-  function and derivative plots.
+  Optional two plot titles.
 
 - ...:
 
-  Additional arguments, currently unused.
+  Unused.
 
 ## Value
 
-A list containing one or two ggplot objects.
+A list of ggplot objects.

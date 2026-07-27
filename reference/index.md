@@ -3,18 +3,19 @@
 ## Fit models
 
 - [`ibm()`](https://jessalynnsebastian.github.io/ibmsmooth/reference/ibm.md)
-  : Unified interface for integrated Brownian motion smoothing
+  : Fit an integrated Brownian motion smoother
 - [`ibm_smooth()`](https://jessalynnsebastian.github.io/ibmsmooth/reference/ibm_smooth.md)
-  : Fit an integrated Brownian motion (IBM) smoother using Stan
-- [`ibm_inla_fit()`](https://jessalynnsebastian.github.io/ibmsmooth/reference/ibm_inla_fit.md)
-  : Fit an integrated Brownian motion smoother using INLA
-- [`ibm_horseshoe_marginalized()`](https://jessalynnsebastian.github.io/ibmsmooth/reference/ibm_horseshoe_marginalized.md)
-  : Fit a marginalized Gaussian horseshoe IBM
-- [`validate_marginalized_horseshoe()`](https://jessalynnsebastian.github.io/ibmsmooth/reference/validate_marginalized_horseshoe.md)
-  : Validate the marginalized Kalman likelihood against a dense Gaussian
-  result
+  : Fit an IBM smoother using Stan
 
-## Summarize posterior draws
+## Exact IBM transitions and simulation
+
+- [`ibm_transition_covariance()`](https://jessalynnsebastian.github.io/ibmsmooth/reference/ibm_transition_covariance.md)
+  [`ibm_transition_cholesky()`](https://jessalynnsebastian.github.io/ibmsmooth/reference/ibm_transition_covariance.md)
+  : Integrated Brownian motion transition matrices
+- [`simulate_ibm()`](https://jessalynnsebastian.github.io/ibmsmooth/reference/simulate_ibm.md)
+  : Simulate integrated Brownian motion with interval-specific diffusion
+
+## Summarize and plot
 
 - [`get_curve_samples()`](https://jessalynnsebastian.github.io/ibmsmooth/reference/get_curve_samples.md)
   : Extract posterior curve samples
@@ -25,21 +26,14 @@
 - [`get_hyperparameter_summary()`](https://jessalynnsebastian.github.io/ibmsmooth/reference/get_hyperparameter_summary.md)
   : Summarize posterior hyperparameters
 - [`get_samples()`](https://jessalynnsebastian.github.io/ibmsmooth/reference/get_samples.md)
-  : Extract posterior samples from an IBM fit
-- [`get_samples_inla()`](https://jessalynnsebastian.github.io/ibmsmooth/reference/get_samples_inla.md)
-  : Extract posterior samples from an INLA fit
-
-## Plot and print results
-
+  : Extract posterior samples
 - [`plot(`*`<ibmfit>`*`)`](https://jessalynnsebastian.github.io/ibmsmooth/reference/plot.ibmfit.md)
-  : Plot method for ibmfit objects
+  : Plot an integrated Brownian motion fit
 - [`plot_curve()`](https://jessalynnsebastian.github.io/ibmsmooth/reference/plot_curve.md)
   : Plot posterior function and derivative summaries
-- [`plot_precision_curve()`](https://jessalynnsebastian.github.io/ibmsmooth/reference/plot_precision_curve.md)
-  : Plot the locally adaptive process precision curve
-- [`plot_roughness_curve()`](https://jessalynnsebastian.github.io/ibmsmooth/reference/plot_roughness_curve.md)
-  : Plot baseline-horseshoe IBM roughness components
+- [`plot_diffusion()`](https://jessalynnsebastian.github.io/ibmsmooth/reference/plot_diffusion.md)
+  : Plot interval-specific diffusion rates
 - [`summary(`*`<ibmfit>`*`)`](https://jessalynnsebastian.github.io/ibmsmooth/reference/summary.ibmfit.md)
-  : Summarize an ibmfit object
+  : Summarize an IBM fit
 - [`print(`*`<summary_ibmfit>`*`)`](https://jessalynnsebastian.github.io/ibmsmooth/reference/print.summary_ibmfit.md)
-  : Print an ibmfit summary
+  : Print an IBM fit summary

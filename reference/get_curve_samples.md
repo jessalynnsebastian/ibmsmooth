@@ -1,7 +1,6 @@
 # Extract posterior curve samples
 
-Extract posterior samples for the latent function and/or derivative over
-the full latent grid.
+Extract posterior curve samples
 
 ## Usage
 
@@ -18,24 +17,20 @@ get_curve_samples(
 
 - ibmfit:
 
-  An object of class `ibmfit`.
+  An `ibmfit` object.
 
 - param:
 
-  Character. One of `"f"`, `"fprime"`, or `"both"`.
+  One of `"f"`, `"fprime"`, or `"both"`.
 
 - n_samples:
 
-  Number of samples to use for INLA fits, or maximum number of MCMC
-  draws to keep for Stan fits. Use `NULL` to keep all Stan draws.
+  Maximum number of draws.
 
 - format:
 
-  Output format, either `"matrix"` or `"long"`.
+  Either `"matrix"` or `"long"`.
 
 ## Value
 
-If `format = "matrix"` and one parameter is requested, a posterior
-sample matrix with rows as draws and columns as time points. If both
-parameters are requested, a list of two matrices. If `format = "long"`,
-a data frame with columns `draw`, `t`, `parameter`, and `value`.
+A matrix, list of matrices, or long data frame.

@@ -1,56 +1,29 @@
-# Plot method for ibmfit objects
+# Plot an integrated Brownian motion fit
 
-Visualize fitted results from an object of class "ibmfit". The plot
-typically shows model predictions with uncertainty and, if supplied,
-observed truth values for comparison.
+Plot an integrated Brownian motion fit
 
 ## Usage
 
 ``` r
 # S3 method for class 'ibmfit'
-plot(x, truth = NULL, titles = NULL, ...)
+plot(x, truth = NULL, ...)
 ```
 
 ## Arguments
 
 - x:
 
-  An object of class "ibmfit", produced by fitting the IBM smoothing
-  model.
+  An `ibmfit` object.
 
 - truth:
 
-  Optional vector, data.frame, or time series of true/observed values to
-  overlay on the plot. If provided, it will be used to compare fitted
-  values to ground truth.
-
-- titles:
-
-  Optional character vector of length one or two giving plot titles for
-  the function and derivative plots.
+  Optional list with `f` and/or `fprime` values on the latent grid.
 
 - ...:
 
-  Additional graphical parameters passed to underlying plotting
-  functions (e.g., type, col, lwd) or other method-specific options
-  recognized by plot.ibmfit.
+  Additional arguments passed to
+  [`plot_curve()`](https://jessalynnsebastian.github.io/ibmsmooth/reference/plot_curve.md).
 
 ## Value
 
-A list with components:
-
-- function_plot:
-
-  A ggplot object showing the estimated function and its uncertainty.
-
-- derivative_plot:
-
-  A ggplot object showing the estimated derivative and its uncertainty.
-
-## Details
-
-This S3 method produces diagnostic and summary plots for an "ibmfit"
-object, such as fitted trajectories, uncertainty intervals, and residual
-summaries. When `truth` is supplied, observed values are added to the
-plot for visual comparison. The exact panels and layout depend on the
-contents of the `ibmfit` object.
+A list containing function and derivative ggplots.

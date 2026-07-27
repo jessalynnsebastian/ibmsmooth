@@ -2,10 +2,9 @@ pandoc: 3.8.3
 pkgdown: 2.2.1
 pkgdown_sha: ~
 articles:
-  inla_ibm: inla_ibm.html
-  marginalized_horseshoe_comparison: marginalized_horseshoe_comparison.html
-  stan_ibm: stan_ibm.html
-last_built: 2026-07-21T21:15Z
+  models: models.html
+  simulating-ibm: simulating-ibm.html
+last_built: 2026-07-27T23:11Z
 urls:
   reference: https://jessalynnsebastian.github.io/ibmsmooth/reference
   article: https://jessalynnsebastian.github.io/ibmsmooth/articles

@@ -1,33 +1,27 @@
 # Summarize posterior curves
 
-Compute pointwise posterior summaries for the latent function and
-derivative.
+Summarize posterior curves
 
 ## Usage
 
 ``` r
-get_curve_summary(
-  ibmfit,
-  n_samples = 1000,
-  probs = c(0.025, 0.1, 0.5, 0.9, 0.975)
-)
+get_curve_summary(ibmfit, n_samples = 1000, probs = c(0.025, 0.5, 0.975))
 ```
 
 ## Arguments
 
 - ibmfit:
 
-  An object of class `ibmfit`.
+  An `ibmfit` object.
 
 - n_samples:
 
-  Number of samples to use for INLA fits, or maximum number of MCMC
-  draws to keep for Stan fits.
+  Maximum number of draws.
 
 - probs:
 
-  Numeric vector of posterior probabilities.
+  Posterior probabilities.
 
 ## Value
 
-A data frame with one row per parameter and time point.
+A data frame with pointwise summaries.

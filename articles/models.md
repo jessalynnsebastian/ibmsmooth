@@ -1,0 +1,89 @@
+# Ordinary and locally adaptive IBM smoothing
+
+## Exact continuous-time model
+
+The package uses the augmented state $`x(t)=(f'(t),f(t))^\mathsf T`$.
+Over $`[t_j,t_{j+1}]`$, with $`\Delta_j=t_{j+1}-t_j`$,
+
+``` math
+x_{j+1}\mid x_j,\lambda_j\sim N_2\{A_jx_j,\lambda_jQ_j\},
+\quad
+A_j=\begin{pmatrix}1&0\\\Delta_j&1\end{pmatrix},
+\quad
+Q_j=\begin{pmatrix}
+\Delta_j&\Delta_j^2/2\\
+\Delta_j^2/2&\Delta_j^3/3
+\end{pmatrix}.
+```
+
+This is an exact transition on irregular grids. It is not a
+finite-difference approximation and does not replace observed time by
+operational time.
+
+## Ordinary IBM
+
+Ordinary IBM uses one diffusion standard deviation $`\tau`$, so
+$`\lambda_j=\tau^2`$. `smoothing_prior` accepts valid Stan code
+involving the positive parameter `tau`.
+
+``` r
+
+fit_lognormal <- ibm(t, y)
+
+fit_half_normal <- ibm(
+  t, y,
+  smoothing_prior = "tau ~ normal(0, 0.5);"
+)
+
+fit_half_t <- ibm(
+  t, y,
+  smoothing_prior = "tau ~ student_t(3, 0, 0.5);"
+)
+```
+
+Because `tau` is constrained positive, symmetric Stan distributions in
+these examples induce their corresponding truncated (half)
+distributions. Priors are specified on the internally standardized
+response and time scale.
+
+## Locally adaptive IBM
+
+The adaptive model uses
+
+``` math
+\sqrt{\lambda_j}=\gamma\xi_j,\qquad
+\xi_j\sim C^+(0,1),\qquad
+\gamma\sim C^+(0,s_\gamma).
+```
+
+Most intervals can be strongly regularized while the heavy-tailed local
+scales allow selected intervals to have substantially larger derivative
+innovations. The derivative remains a continuous Brownian path; each
+local scale controls how much its slope is permitted to evolve over an
+interval.
+
+``` r
+
+fit_adaptive <- ibm(
+  t, y,
+  adaptive = TRUE,
+  global_scale = 0.1,
+  chains = 4,
+  iter = 2000,
+  adapt_delta = 0.99
+)
+
+plot(fit_adaptive)
+plot_diffusion(fit_adaptive)
+summary(fit_adaptive)
+```
+
+Posterior samples for both the function and derivative are available
+directly:
+
+``` r
+
+f_draws <- get_samples(fit_adaptive, "f")
+derivative_draws <- get_samples(fit_adaptive, "fprime")
+lambda_draws <- get_samples(fit_adaptive, "lambda_interval")
+```

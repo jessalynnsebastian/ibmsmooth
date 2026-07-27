@@ -3,9 +3,8 @@
 <url><loc>https://jessalynnsebastian.github.io/ibmsmooth/LICENSE-text.html</loc></url>
 <url><loc>https://jessalynnsebastian.github.io/ibmsmooth/LICENSE.html</loc></url>
 <url><loc>https://jessalynnsebastian.github.io/ibmsmooth/articles/index.html</loc></url>
-<url><loc>https://jessalynnsebastian.github.io/ibmsmooth/articles/inla_ibm.html</loc></url>
-<url><loc>https://jessalynnsebastian.github.io/ibmsmooth/articles/marginalized_horseshoe_comparison.html</loc></url>
-<url><loc>https://jessalynnsebastian.github.io/ibmsmooth/articles/stan_ibm.html</loc></url>
+<url><loc>https://jessalynnsebastian.github.io/ibmsmooth/articles/models.html</loc></url>
+<url><loc>https://jessalynnsebastian.github.io/ibmsmooth/articles/simulating-ibm.html</loc></url>
 <url><loc>https://jessalynnsebastian.github.io/ibmsmooth/authors.html</loc></url>
 <url><loc>https://jessalynnsebastian.github.io/ibmsmooth/index.html</loc></url>
 <url><loc>https://jessalynnsebastian.github.io/ibmsmooth/reference/get_curve_samples.html</loc></url>
@@ -13,18 +12,15 @@
 <url><loc>https://jessalynnsebastian.github.io/ibmsmooth/reference/get_hyperparameter_samples.html</loc></url>
 <url><loc>https://jessalynnsebastian.github.io/ibmsmooth/reference/get_hyperparameter_summary.html</loc></url>
 <url><loc>https://jessalynnsebastian.github.io/ibmsmooth/reference/get_samples.html</loc></url>
-<url><loc>https://jessalynnsebastian.github.io/ibmsmooth/reference/get_samples_inla.html</loc></url>
 <url><loc>https://jessalynnsebastian.github.io/ibmsmooth/reference/ibm.html</loc></url>
-<url><loc>https://jessalynnsebastian.github.io/ibmsmooth/reference/ibm_horseshoe_marginalized.html</loc></url>
-<url><loc>https://jessalynnsebastian.github.io/ibmsmooth/reference/ibm_inla_fit.html</loc></url>
 <url><loc>https://jessalynnsebastian.github.io/ibmsmooth/reference/ibm_smooth.html</loc></url>
+<url><loc>https://jessalynnsebastian.github.io/ibmsmooth/reference/ibm_transition_covariance.html</loc></url>
 <url><loc>https://jessalynnsebastian.github.io/ibmsmooth/reference/index.html</loc></url>
 <url><loc>https://jessalynnsebastian.github.io/ibmsmooth/reference/plot.ibmfit.html</loc></url>
 <url><loc>https://jessalynnsebastian.github.io/ibmsmooth/reference/plot_curve.html</loc></url>
-<url><loc>https://jessalynnsebastian.github.io/ibmsmooth/reference/plot_precision_curve.html</loc></url>
-<url><loc>https://jessalynnsebastian.github.io/ibmsmooth/reference/plot_roughness_curve.html</loc></url>
+<url><loc>https://jessalynnsebastian.github.io/ibmsmooth/reference/plot_diffusion.html</loc></url>
 <url><loc>https://jessalynnsebastian.github.io/ibmsmooth/reference/print.summary_ibmfit.html</loc></url>
+<url><loc>https://jessalynnsebastian.github.io/ibmsmooth/reference/simulate_ibm.html</loc></url>
 <url><loc>https://jessalynnsebastian.github.io/ibmsmooth/reference/summary.ibmfit.html</loc></url>
-<url><loc>https://jessalynnsebastian.github.io/ibmsmooth/reference/validate_marginalized_horseshoe.html</loc></url>
 </urlset>
 
