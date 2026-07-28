@@ -18,12 +18,14 @@ test_that("ordinary IBM accepts an arbitrary Stan smoothing prior", {
 
 test_that("adaptive Stan model matches the chapter hierarchy", {
   code <- ibm(get_code = TRUE, adaptive = TRUE)
-  expect_match(code, "tau_interval = gamma * xi", fixed = TRUE)
-  expect_match(code, "lambda_interval = square(tau_interval)", fixed = TRUE)
+  expect_match(code, "real tau_i = gamma * xi[i - 1]", fixed = TRUE)
+  expect_match(code, "lambda_interval = square(gamma * xi)", fixed = TRUE)
   expect_match(code, "gamma ~ cauchy(0, global_scale)", fixed = TRUE)
   expect_match(code, "xi ~ cauchy(0, 1)", fixed = TRUE)
   expect_match(code, "h * fprime[i - 1]", fixed = TRUE)
-  expect_match(code, "tau_i * sqrt(h)", fixed = TRUE)
+  expect_match(code, "tau_i * sqrt_deltat[i - 1]", fixed = TRUE)
+  expect_match(code, "generated quantities", fixed = TRUE)
+  expect_match(code, "y_obs ~ normal(f[obs_time_idx], sigma)", fixed = TRUE)
   expect_false(grepl("operational", code, ignore.case = TRUE))
 })
 

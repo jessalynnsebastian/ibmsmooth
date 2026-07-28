@@ -19,6 +19,16 @@
   code
 }
 
+.ibm_model_cache <- new.env(parent = emptyenv())
+
+.ibm_stan_model <- function(code) {
+  if (!exists(code, envir = .ibm_model_cache, inherits = FALSE)) {
+    model <- rstan::stan_model(model_code = code)
+    assign(code, model, envir = .ibm_model_cache)
+  }
+  get(code, envir = .ibm_model_cache, inherits = FALSE)
+}
+
 .ibm_fit <- function(t, y, infer_at, adaptive, smoothing_prior, global_scale,
                      log_sigma, initial_sd, iter, chains, cores,
                      max_treedepth, adapt_delta, get_code, ...) {
@@ -81,11 +91,9 @@
   )
   if (isTRUE(adaptive)) stan_data$global_scale <- global_scale
 
-  stan_file <- tempfile(fileext = ".stan")
-  on.exit(unlink(stan_file), add = TRUE)
-  writeLines(code, stan_file)
-  stanfit <- rstan::stan(
-    file = stan_file, data = stan_data, iter = iter, chains = chains,
+  stan_model <- .ibm_stan_model(code)
+  stanfit <- rstan::sampling(
+    object = stan_model, data = stan_data, iter = iter, chains = chains,
     cores = cores,
     control = list(max_treedepth = max_treedepth,
                    adapt_delta = adapt_delta),

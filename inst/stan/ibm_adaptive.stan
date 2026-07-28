@@ -9,6 +9,10 @@ data {
   real<lower=0> global_scale;
   real<lower=0> initial_sd;
 }
+transformed data {
+  vector[T - 1] sqrt_deltat = sqrt(deltat);
+  vector[T - 1] deltat_3_2 = deltat .* sqrt_deltat;
+}
 parameters {
   real log_sigma_raw;
   real<lower=0> gamma;
@@ -18,8 +22,6 @@ parameters {
 }
 transformed parameters {
   real<lower=0> sigma = exp(log_sigma_mu + log_sigma_sd * log_sigma_raw);
-  vector<lower=0>[T - 1] tau_interval = gamma * xi;
-  vector<lower=0>[T - 1] lambda_interval = square(tau_interval);
   vector[T] fprime;
   vector[T] f;
 
@@ -27,12 +29,11 @@ transformed parameters {
   f[1] = initial_sd * z_initial[2];
   for (i in 2:T) {
     real h = deltat[i - 1];
-    real h32 = h * sqrt(h);
-    real tau_i = tau_interval[i - 1];
+    real tau_i = gamma * xi[i - 1];
     fprime[i] = fprime[i - 1]
-      + tau_i * sqrt(h) * z_transition[i - 1][1];
+      + tau_i * sqrt_deltat[i - 1] * z_transition[i - 1][1];
     f[i] = f[i - 1] + h * fprime[i - 1]
-      + tau_i * h32
+      + tau_i * deltat_3_2[i - 1]
         * (0.5 * z_transition[i - 1][1]
            + inv_sqrt(12.0) * z_transition[i - 1][2]);
   }
@@ -43,6 +44,8 @@ model {
   xi ~ cauchy(0, 1);
   z_initial ~ std_normal();
   for (i in 1:(T - 1)) z_transition[i] ~ std_normal();
-  for (n in 1:N_obs)
-    y_obs[n] ~ normal(f[obs_time_idx[n]], sigma);
+  y_obs ~ normal(f[obs_time_idx], sigma);
+}
+generated quantities {
+  vector<lower=0>[T - 1] lambda_interval = square(gamma * xi);
 }
