@@ -1,11 +1,42 @@
-test_that("only the two intended Stan implementations remain", {
+test_that("standard and fast Stan implementations are present", {
   stan_dir <- system.file("stan", package = "ibmsmooth")
   if (!nzchar(stan_dir)) {
     stan_dir <- testthat::test_path("..", "..", "inst", "stan")
   }
   files <- sort(basename(list.files(stan_dir, pattern = "\\.stan$",
                                     full.names = TRUE)))
-  expect_identical(files, c("ibm.stan", "ibm_adaptive.stan"))
+  expect_identical(
+    files,
+    c("ibm.stan", "ibm_adaptive.stan",
+      "ibm_adaptive_fast.stan", "ibm_fast.stan")
+  )
+})
+
+test_that("fast programs filter derivatives and draw them backward", {
+  for (adaptive in c(FALSE, TRUE)) {
+    code <- ibm(get_code = TRUE, adaptive = adaptive, fast = TRUE)
+    expect_match(code, "derivative_filter_mean", fixed = TRUE)
+    expect_match(code, "derivative_filter_variance", fixed = TRUE)
+    expect_match(code, "generated quantities", fixed = TRUE)
+    expect_match(code, "vector[T] fprime", fixed = TRUE)
+    expect_false(grepl("array[T - 1] vector[2] z_transition",
+                       code, fixed = TRUE))
+  }
+})
+
+test_that("filtered and augmented IBM priors have identical covariance", {
+  checks <- list(
+    verify_ibm_equivalence(c(0, 0.2, 1.1, 1.4), lambda = 0.7),
+    verify_ibm_equivalence(
+      c(-1, -0.8, 0.4, 2.5, 2.7),
+      lambda = c(0.01, 1.3, 0.08, 0.4),
+      initial_sd = 2.1
+    )
+  )
+  for (check in checks) {
+    expect_true(check$equivalent)
+    expect_lt(check$max_abs_covariance_difference, 1e-12)
+  }
 })
 
 test_that("ordinary IBM accepts an arbitrary Stan smoothing prior", {
@@ -82,6 +113,7 @@ test_that("fit input validation is performed before sampling", {
   expect_error(ibm(1:3, c(1, 1, 1)), "positive finite standard deviation")
   expect_error(ibm(c(1, 1), c(0, 1)), "At least two unique")
   expect_error(ibm(get_code = TRUE, adaptive = NA), "adaptive")
+  expect_error(ibm(get_code = TRUE, fast = NA), "fast")
   expect_error(
     ibm(get_code = TRUE, smoothing_prior = ""),
     "one non-empty character"

@@ -1,8 +1,8 @@
 #' Extract computation and MCMC diagnostics
 #'
 #' Reports elapsed sampling time, effective sample sizes, split R-hat,
-#' divergences, maximum-treedepth hits, acceptance statistics, and
-#' energy Bayesian fraction of missing information (E-BFMI).
+#' divergences, leapfrog counts, treedepth, acceptance statistics, and energy
+#' Bayesian fraction of missing information (E-BFMI).
 #'
 #' @param ibmfit An `ibmfit`.
 #' @param pars Optional character vector of Stan parameters. By default all
@@ -45,6 +45,9 @@ get_diagnostics <- function(ibmfit, pars = NULL) {
       treedepth_hits = if (length(max_depth)) {
         sum(x[, "treedepth__"] >= max_depth)
       } else NA_integer_,
+      mean_treedepth = mean(x[, "treedepth__"]),
+      mean_leapfrog = mean(x[, "n_leapfrog__"]),
+      median_leapfrog = stats::median(x[, "n_leapfrog__"]),
       mean_accept_stat = mean(x[, "accept_stat__"]),
       mean_stepsize = mean(x[, "stepsize__"]),
       ebfmi = ebfmi
@@ -52,7 +55,11 @@ get_diagnostics <- function(ibmfit, pars = NULL) {
   })
   sampler <- do.call(rbind, chain_diagnostics)
 
-  sm <- rstan::summary(fit, pars = pars)$summary
+  sm <- if (is.null(pars)) {
+    rstan::summary(fit)$summary
+  } else {
+    rstan::summary(fit, pars = pars)$summary
+  }
   parameters <- data.frame(
     parameter = rownames(sm), sm, row.names = NULL, check.names = FALSE
   )
@@ -63,6 +70,13 @@ get_diagnostics <- function(ibmfit, pars = NULL) {
     max_rhat = suppressWarnings(max(parameters$Rhat, na.rm = TRUE)),
     divergences = sum(sampler$divergences),
     treedepth_hits = sum(sampler$treedepth_hits, na.rm = TRUE),
+    mean_treedepth = stats::weighted.mean(
+      sampler$mean_treedepth, sampler$iterations
+    ),
+    mean_leapfrog = stats::weighted.mean(
+      sampler$mean_leapfrog, sampler$iterations
+    ),
+    median_chain_leapfrog = stats::median(sampler$median_leapfrog),
     min_ebfmi = suppressWarnings(min(sampler$ebfmi, na.rm = TRUE))
   )
   list(timing = timing, sampler = sampler, parameters = parameters,

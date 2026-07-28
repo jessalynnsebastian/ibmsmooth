@@ -80,6 +80,17 @@ fit_adaptive <- ibm(
   adapt_delta = 0.99
 )
 
+# Same model with derivative states marginalized during HMC
+fit_adaptive_fast <- ibm(
+  t, y,
+  adaptive = TRUE,
+  fast = TRUE,
+  global_scale = 0.1,
+  chains = 4,
+  iter = 2000,
+  adapt_delta = 0.99
+)
+
 plot(fit_adaptive)
 plot_diffusion(fit_adaptive)
 summary(fit_adaptive)

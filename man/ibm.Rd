@@ -9,6 +9,7 @@ ibm(
   y = NULL,
   infer_at = NULL,
   adaptive = FALSE,
+  fast = FALSE,
   smoothing_prior = "tau ~ lognormal(-2, 0.5);",
   global_scale = 0.1,
   log_sigma = list(mu = -1, sd = 1),
@@ -16,6 +17,7 @@ ibm(
   iter = 2000,
   chains = 4,
   cores = getOption("mc.cores", chains),
+  init = "random",
   max_treedepth = 12,
   adapt_delta = 0.9,
   get_code = FALSE,
@@ -32,6 +34,9 @@ after sampling. These locations do not enlarge the Stan latent state.}
 
 \item{adaptive}{Logical; use locally adaptive IBM when \code{TRUE}.}
 
+\item{fast}{Logical; use the derivative-marginalized implementation when
+\code{TRUE}. It defines the same IBM model but samples fewer latent variables.}
+
 \item{smoothing_prior}{A character string containing valid Stan code for the
 prior on the positive ordinary-IBM smoothing parameter \code{tau}. For example,
 \code{"tau ~ normal(0, 0.5);"} or \code{"tau ~ student_t(3, 0, 1);"}. This is used
@@ -47,6 +52,8 @@ standard deviation on the internally standardized response scale.}
 value and derivative on the internally standardized scale.}
 
 \item{iter, chains, cores}{Stan sampling controls.}
+
+\item{init}{Initial values passed to \code{\link[rstan:sampling]{rstan::sampling()}}.}
 
 \item{max_treedepth, adapt_delta}{Stan HMC controls.}
 

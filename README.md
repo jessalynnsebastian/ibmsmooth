@@ -53,6 +53,20 @@ fit_adaptive <- ibm(
   global_scale = 0.1
 )
 
+# Exact derivative-marginalized implementation of the same model
+fit_adaptive_fast <- ibm(
+  t, y,
+  adaptive = TRUE,
+  fast = TRUE,
+  global_scale = 0.1
+)
+
+# Verify equality of the two conditional IBM priors
+verify_ibm_equivalence(
+  sort(unique(t)),
+  lambda = rep(0.1, length(unique(t)) - 1)
+)
+
 plot(fit_adaptive)
 plot_diffusion(fit_adaptive)
 
@@ -71,6 +85,13 @@ on the standardized model scale. Extraction functions transform posterior
 draws back to the original response and time scales. Locations supplied through
 `infer_at` are not added to the Stan state vector; `predict_curve()` samples
 them afterward using exact conditional IBM bridges.
+
+Setting `fast = TRUE` selects separate Stan programs that analytically filter
+out derivative states during HMC and draw their joint posterior trajectory
+afterward. The observation-level latent function remains in the model, so this
+representation can also support non-Gaussian likelihoods. The standard Stan
+programs remain the default; the alternative programs are the files ending in
+`_fast.stan`.
 
 ## License
 

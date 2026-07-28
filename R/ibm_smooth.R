@@ -1,5 +1,9 @@
-.ibm_stan_path <- function(adaptive) {
-  filename <- if (isTRUE(adaptive)) "ibm_adaptive.stan" else "ibm.stan"
+.ibm_stan_path <- function(adaptive, fast = FALSE) {
+  filename <- if (isTRUE(adaptive)) {
+    if (isTRUE(fast)) "ibm_adaptive_fast.stan" else "ibm_adaptive.stan"
+  } else {
+    if (isTRUE(fast)) "ibm_fast.stan" else "ibm.stan"
+  }
   installed <- system.file("stan", filename, package = "ibmsmooth")
   if (nzchar(installed)) return(installed)
   source_path <- file.path("inst", "stan", filename)
@@ -7,8 +11,11 @@
   stop("Could not locate ", filename, ".", call. = FALSE)
 }
 
-.ibm_stan_code <- function(adaptive, smoothing_prior) {
-  code <- paste(readLines(.ibm_stan_path(adaptive), warn = FALSE), collapse = "\n")
+.ibm_stan_code <- function(adaptive, smoothing_prior, fast = FALSE) {
+  code <- paste(
+    readLines(.ibm_stan_path(adaptive, fast), warn = FALSE),
+    collapse = "\n"
+  )
   if (!isTRUE(adaptive)) {
     if (!is.character(smoothing_prior) || length(smoothing_prior) != 1L ||
         is.na(smoothing_prior) || !nzchar(trimws(smoothing_prior))) {
@@ -30,13 +37,16 @@
 }
 
 .ibm_fit <- function(t, y, infer_at, adaptive, smoothing_prior, global_scale,
-                     log_sigma, initial_sd, iter, chains, cores,
+                     log_sigma, initial_sd, iter, chains, cores, init = "random",
                      max_treedepth, adapt_delta, get_code, prior_only = FALSE,
-                     ...) {
+                     fast = FALSE, ...) {
   if (!is.logical(adaptive) || length(adaptive) != 1L || is.na(adaptive)) {
     stop("adaptive must be TRUE or FALSE.", call. = FALSE)
   }
-  code <- .ibm_stan_code(adaptive, smoothing_prior)
+  if (!is.logical(fast) || length(fast) != 1L || is.na(fast)) {
+    stop("fast must be TRUE or FALSE.", call. = FALSE)
+  }
+  code <- .ibm_stan_code(adaptive, smoothing_prior, fast)
   if (isTRUE(get_code) || (is.null(t) && is.null(y))) return(code)
 
   if (!requireNamespace("rstan", quietly = TRUE)) {
@@ -98,7 +108,7 @@
   stan_model <- .ibm_stan_model(code)
   stanfit <- rstan::sampling(
     object = stan_model, data = stan_data, iter = iter, chains = chains,
-    cores = cores,
+    cores = cores, init = init,
     control = list(max_treedepth = max_treedepth,
                    adapt_delta = adapt_delta),
     ...
@@ -114,12 +124,14 @@
       prediction_grid_raw = sort(unique(c(grid_raw, as.numeric(infer_at))))
     ),
     adaptive = adaptive,
+    fast = isTRUE(fast),
     smoothing_prior = if (adaptive) NULL else smoothing_prior,
     prior_only = isTRUE(prior_only),
     fit_spec = list(
       t = t_raw, y = y_raw,
       infer_at = sort(unique(as.numeric(infer_at))),
-      adaptive = adaptive, smoothing_prior = smoothing_prior,
+      adaptive = adaptive, fast = isTRUE(fast),
+      smoothing_prior = smoothing_prior,
       global_scale = global_scale, log_sigma = log_sigma,
       initial_sd = initial_sd, max_treedepth = max_treedepth,
       adapt_delta = adapt_delta
@@ -138,19 +150,21 @@
 #' @return An object of class `ibmfit`, or Stan code when `get_code = TRUE`.
 #' @export
 ibm_smooth <- function(t = NULL, y = NULL, infer_at = NULL, adaptive = FALSE,
+                       fast = FALSE,
                        smoothing_prior = "tau ~ lognormal(-2, 0.5);",
                        global_scale = 0.1,
                        log_sigma = list(mu = -1, sd = 1),
                        initial_sd = 5,
                        iter = 2000, chains = 4,
                        cores = getOption("mc.cores", chains),
+                       init = "random",
                        max_treedepth = 12, adapt_delta = 0.9,
                        get_code = FALSE, ...) {
   ibm(
-    t = t, y = y, infer_at = infer_at, adaptive = adaptive,
+    t = t, y = y, infer_at = infer_at, adaptive = adaptive, fast = fast,
     smoothing_prior = smoothing_prior, global_scale = global_scale,
     log_sigma = log_sigma, initial_sd = initial_sd,
-    iter = iter, chains = chains, cores = cores,
+    iter = iter, chains = chains, cores = cores, init = init,
     max_treedepth = max_treedepth, adapt_delta = adapt_delta,
     get_code = get_code, ...
   )

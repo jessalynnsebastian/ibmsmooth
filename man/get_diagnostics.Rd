@@ -18,6 +18,6 @@ components.
 }
 \description{
 Reports elapsed sampling time, effective sample sizes, split R-hat,
-divergences, maximum-treedepth hits, acceptance statistics, and
-energy Bayesian fraction of missing information (E-BFMI).
+divergences, leapfrog counts, treedepth, acceptance statistics, and energy
+Bayesian fraction of missing information (E-BFMI).
 }

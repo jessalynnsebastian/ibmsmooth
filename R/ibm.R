@@ -10,6 +10,8 @@
 #' @param infer_at Optional additional locations at which to predict the state
 #'   after sampling. These locations do not enlarge the Stan latent state.
 #' @param adaptive Logical; use locally adaptive IBM when `TRUE`.
+#' @param fast Logical; use the derivative-marginalized implementation when
+#'   `TRUE`. It defines the same IBM model but samples fewer latent variables.
 #' @param smoothing_prior A character string containing valid Stan code for the
 #'   prior on the positive ordinary-IBM smoothing parameter `tau`. For example,
 #'   `"tau ~ normal(0, 0.5);"` or `"tau ~ student_t(3, 0, 1);"`. This is used
@@ -21,6 +23,7 @@
 #' @param initial_sd Positive prior standard deviation for the initial function
 #'   value and derivative on the internally standardized scale.
 #' @param iter,chains,cores Stan sampling controls.
+#' @param init Initial values passed to [rstan::sampling()].
 #' @param max_treedepth,adapt_delta Stan HMC controls.
 #' @param get_code If `TRUE`, return the selected Stan program rather than fit.
 #' @param ... Additional arguments passed to [rstan::stan()].
@@ -41,19 +44,21 @@
 #' @return An object of class `ibmfit`, or Stan code when `get_code = TRUE`.
 #' @export
 ibm <- function(t = NULL, y = NULL, infer_at = NULL, adaptive = FALSE,
+                fast = FALSE,
                 smoothing_prior = "tau ~ lognormal(-2, 0.5);",
                 global_scale = 0.1,
                 log_sigma = list(mu = -1, sd = 1),
                 initial_sd = 5,
                 iter = 2000, chains = 4,
                 cores = getOption("mc.cores", chains),
+                init = "random",
                 max_treedepth = 12, adapt_delta = 0.9,
                 get_code = FALSE, ...) {
   .ibm_fit(
-    t = t, y = y, infer_at = infer_at, adaptive = adaptive,
+    t = t, y = y, infer_at = infer_at, adaptive = adaptive, fast = fast,
     smoothing_prior = smoothing_prior, global_scale = global_scale,
     log_sigma = log_sigma, initial_sd = initial_sd,
-    iter = iter, chains = chains, cores = cores,
+    iter = iter, chains = chains, cores = cores, init = init,
     max_treedepth = max_treedepth, adapt_delta = adapt_delta,
     get_code = get_code, prior_only = FALSE, ...
   )
