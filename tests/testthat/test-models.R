@@ -20,8 +20,15 @@ test_that("adaptive Stan model matches the chapter hierarchy", {
   code <- ibm(get_code = TRUE, adaptive = TRUE)
   expect_match(code, "real tau_i = gamma * xi[i - 1]", fixed = TRUE)
   expect_match(code, "lambda_interval = square(gamma * xi)", fixed = TRUE)
-  expect_match(code, "gamma ~ cauchy(0, global_scale)", fixed = TRUE)
-  expect_match(code, "xi ~ cauchy(0, 1)", fixed = TRUE)
+  expect_match(
+    code,
+    "gamma = global_scale * tan(0.5 * pi() * gamma_unif)",
+    fixed = TRUE
+  )
+  expect_match(code, "xi = tan(0.5 * pi() * xi_unif)", fixed = TRUE)
+  expect_match(code, "gamma_unif ~ uniform(0, 1)", fixed = TRUE)
+  expect_match(code, "xi_unif ~ uniform(0, 1)", fixed = TRUE)
+  expect_false(grepl("~ cauchy", code, fixed = TRUE))
   expect_match(code, "h * fprime[i - 1]", fixed = TRUE)
   expect_match(code, "tau_i * sqrt_deltat[i - 1]", fixed = TRUE)
   expect_match(code, "generated quantities", fixed = TRUE)

@@ -15,13 +15,15 @@ transformed data {
 }
 parameters {
   real log_sigma_raw;
-  real<lower=0> gamma;
-  vector<lower=0>[T - 1] xi;
+  real<lower=0, upper=1> gamma_unif;
+  vector<lower=0, upper=1>[T - 1] xi_unif;
   vector[2] z_initial;
   array[T - 1] vector[2] z_transition;
 }
 transformed parameters {
   real<lower=0> sigma = exp(log_sigma_mu + log_sigma_sd * log_sigma_raw);
+  real<lower=0> gamma = global_scale * tan(0.5 * pi() * gamma_unif);
+  vector<lower=0>[T - 1] xi = tan(0.5 * pi() * xi_unif);
   vector[T] fprime;
   vector[T] f;
 
@@ -40,8 +42,8 @@ transformed parameters {
 }
 model {
   log_sigma_raw ~ std_normal();
-  gamma ~ cauchy(0, global_scale);
-  xi ~ cauchy(0, 1);
+  gamma_unif ~ uniform(0, 1);
+  xi_unif ~ uniform(0, 1);
   z_initial ~ std_normal();
   for (i in 1:(T - 1)) z_transition[i] ~ std_normal();
   y_obs ~ normal(f[obs_time_idx], sigma);
