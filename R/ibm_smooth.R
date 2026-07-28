@@ -31,7 +31,8 @@
 
 .ibm_fit <- function(t, y, infer_at, adaptive, smoothing_prior, global_scale,
                      log_sigma, initial_sd, iter, chains, cores,
-                     max_treedepth, adapt_delta, get_code, ...) {
+                     max_treedepth, adapt_delta, get_code, prior_only = FALSE,
+                     ...) {
   if (!is.logical(adaptive) || length(adaptive) != 1L || is.na(adaptive)) {
     stop("adaptive must be TRUE or FALSE.", call. = FALSE)
   }
@@ -65,7 +66,9 @@
 
   t_raw <- as.numeric(t)
   y_raw <- as.numeric(y)
-  grid_raw <- sort(unique(c(t_raw, as.numeric(infer_at))))
+  # Only observed locations belong in the Stan state vector. States requested
+  # through infer_at are recovered afterward from exact IBM bridges.
+  grid_raw <- sort(unique(t_raw))
   if (length(grid_raw) < 2L) {
     stop("At least two unique locations are required.", call. = FALSE)
   }
@@ -87,7 +90,8 @@
     y_obs = (y_raw - y_mean) / y_sd,
     log_sigma_mu = log_sigma$mu,
     log_sigma_sd = log_sigma$sd,
-    initial_sd = initial_sd
+    initial_sd = initial_sd,
+    prior_only = as.integer(isTRUE(prior_only))
   )
   if (isTRUE(adaptive)) stan_data$global_scale <- global_scale
 
@@ -105,10 +109,21 @@
     data = list(
       t_raw = t_raw, y_raw = y_raw, time_grid_raw = grid_raw,
       time_grid = grid, obs_time_idx = obs_idx, t_min = t_min,
-      dt_mean = dt_mean, y_mean = y_mean, y_sd = y_sd
+      dt_mean = dt_mean, y_mean = y_mean, y_sd = y_sd,
+      infer_at = sort(unique(as.numeric(infer_at))),
+      prediction_grid_raw = sort(unique(c(grid_raw, as.numeric(infer_at))))
     ),
     adaptive = adaptive,
-    smoothing_prior = if (adaptive) NULL else smoothing_prior
+    smoothing_prior = if (adaptive) NULL else smoothing_prior,
+    prior_only = isTRUE(prior_only),
+    fit_spec = list(
+      t = t_raw, y = y_raw,
+      infer_at = sort(unique(as.numeric(infer_at))),
+      adaptive = adaptive, smoothing_prior = smoothing_prior,
+      global_scale = global_scale, log_sigma = log_sigma,
+      initial_sd = initial_sd, max_treedepth = max_treedepth,
+      adapt_delta = adapt_delta
+    )
   )
   class(fit) <- c("ibmfit", "list")
   fit

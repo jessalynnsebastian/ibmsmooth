@@ -7,7 +7,8 @@
 #'
 #' @param t Numeric observation locations.
 #' @param y Numeric observations. Replicates at the same location are allowed.
-#' @param infer_at Optional additional locations at which to infer the state.
+#' @param infer_at Optional additional locations at which to predict the state
+#'   after sampling. These locations do not enlarge the Stan latent state.
 #' @param adaptive Logical; use locally adaptive IBM when `TRUE`.
 #' @param smoothing_prior A character string containing valid Stan code for the
 #'   prior on the positive ordinary-IBM smoothing parameter `tau`. For example,
@@ -28,7 +29,8 @@
 #' Time is shifted and divided by its mean grid spacing and the response is
 #' standardized before fitting. Consequently, `smoothing_prior` is expressed
 #' on that stable internal scale. Natural-scale draws are returned by the
-#' extraction helpers.
+#' extraction helpers. Locations in `infer_at` are evaluated after fitting
+#' using exact conditional IBM bridges, avoiding additional Stan parameters.
 #'
 #' The adaptive transition over an interval of length \eqn{\Delta_j} is exactly
 #' bivariate normal with mean
@@ -53,6 +55,6 @@ ibm <- function(t = NULL, y = NULL, infer_at = NULL, adaptive = FALSE,
     log_sigma = log_sigma, initial_sd = initial_sd,
     iter = iter, chains = chains, cores = cores,
     max_treedepth = max_treedepth, adapt_delta = adapt_delta,
-    get_code = get_code, ...
+    get_code = get_code, prior_only = FALSE, ...
   )
 }

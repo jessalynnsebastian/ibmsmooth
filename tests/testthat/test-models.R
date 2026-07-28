@@ -36,6 +36,15 @@ test_that("adaptive Stan model matches the chapter hierarchy", {
   expect_false(grepl("operational", code, ignore.case = TRUE))
 })
 
+test_that("both Stan models can omit the likelihood for prior sampling", {
+  ordinary <- ibm(get_code = TRUE)
+  adaptive <- ibm(get_code = TRUE, adaptive = TRUE)
+  for (code in list(ordinary, adaptive)) {
+    expect_match(code, "int<lower=0, upper=1> prior_only", fixed = TRUE)
+    expect_match(code, "if (!prior_only)", fixed = TRUE)
+  }
+})
+
 test_that("analytic Cholesky factor gives lambda Q(delta)", {
   for (delta in c(0.01, 0.4, 3.7)) {
     for (lambda in c(0.2, 2)) {
@@ -46,6 +55,16 @@ test_that("analytic Cholesky factor gives lambda Q(delta)", {
         tolerance = 1e-14
       )
     }
+  }
+})
+
+test_that("IBM bridge covariance has the expected endpoints", {
+  h <- 1.7
+  for (u in c(0, h)) {
+    cross <- ibmsmooth:::.ibm_Q(u) %*% t(ibmsmooth:::.ibm_A(h - u))
+    gain <- cross %*% solve(ibmsmooth:::.ibm_Q(h))
+    conditional <- ibmsmooth:::.ibm_Q(u) - gain %*% t(cross)
+    expect_equal(conditional, matrix(0, 2, 2), tolerance = 1e-12)
   }
 })
 

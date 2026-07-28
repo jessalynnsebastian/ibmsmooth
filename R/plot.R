@@ -8,10 +8,15 @@
 #' @method plot ibmfit
 plot.ibmfit <- function(x, truth = NULL, ...) {
   if (!inherits(x, "ibmfit")) stop("x must be an ibmfit object.", call. = FALSE)
+  prediction_grid <- x$data$prediction_grid_raw
+  if (is.null(prediction_grid)) prediction_grid <- x$data$time_grid_raw
+  curves <- predict_curve(
+    x, new_t = prediction_grid
+  )
   plot_curve(
-    t_unique = x$data$time_grid_raw,
-    f_samples = get_samples(x, "f"),
-    fprime_samples = get_samples(x, "fprime"),
+    t_unique = curves$t,
+    f_samples = curves$f,
+    fprime_samples = curves$fprime,
     dat_orig = data.frame(t = x$data$t_raw, y = x$data$y_raw),
     truth = truth,
     ...

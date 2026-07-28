@@ -60,10 +60,8 @@ get_curve_samples <- function(ibmfit, param = c("f", "fprime", "both"),
   param <- match.arg(param)
   format <- match.arg(format)
   requested <- if (param == "both") c("f", "fprime") else param
-  draws <- stats::setNames(
-    lapply(requested, function(x) get_samples(ibmfit, x, n_samples)),
-    requested
-  )
+  prediction <- predict_curve(ibmfit, n_samples = n_samples)
+  draws <- prediction[requested]
   if (format == "matrix") {
     if (length(draws) == 1L) return(draws[[1L]])
     return(draws)
@@ -72,7 +70,7 @@ get_curve_samples <- function(ibmfit, param = c("f", "fprime", "both"),
     x <- draws[[name]]
     data.frame(
       draw = rep(seq_len(nrow(x)), each = ncol(x)),
-      t = rep(ibmfit$data$time_grid_raw, nrow(x)),
+      t = rep(prediction$t, nrow(x)),
       parameter = name,
       value = as.numeric(t(x)),
       row.names = NULL
@@ -90,12 +88,13 @@ get_curve_samples <- function(ibmfit, param = c("f", "fprime", "both"),
 get_curve_summary <- function(ibmfit, n_samples = 1000,
                               probs = c(0.025, 0.5, 0.975)) {
   draws <- get_curve_samples(ibmfit, "both", n_samples)
+  prediction_t <- as.numeric(colnames(draws[[1L]]))
   do.call(rbind, lapply(names(draws), function(name) {
     x <- draws[[name]]
     q <- t(apply(x, 2L, stats::quantile, probs = probs))
     colnames(q) <- paste0("q", formatC(100 * probs, format = "f", digits = 1))
     data.frame(
-      t = ibmfit$data$time_grid_raw, parameter = name,
+      t = prediction_t, parameter = name,
       mean = colMeans(x), sd = apply(x, 2L, stats::sd),
       q, row.names = NULL, check.names = FALSE
     )

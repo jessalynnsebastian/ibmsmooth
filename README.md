@@ -55,11 +55,22 @@ fit_adaptive <- ibm(
 
 plot(fit_adaptive)
 plot_diffusion(fit_adaptive)
+
+# Visual model checks
+plot_pp_check(fit_adaptive)
+plot_pp_check(fit_adaptive, type = "density")
+plot_prior_posterior(fit_adaptive, seed = 123)
+
+# Timing, ESS, R-hat, divergences, treedepth, acceptance, and E-BFMI
+diagnostics <- get_diagnostics(fit_adaptive)
+diagnostics$overview
 ```
 
 The data are standardized internally, so custom smoothing priors are specified
 on the standardized model scale. Extraction functions transform posterior
-draws back to the original response and time scales.
+draws back to the original response and time scales. Locations supplied through
+`infer_at` are not added to the Stan state vector; `predict_curve()` samples
+them afterward using exact conditional IBM bridges.
 
 ## License
 

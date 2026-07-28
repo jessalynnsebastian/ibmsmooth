@@ -7,6 +7,7 @@ data {
   real log_sigma_mu;
   real<lower=0> log_sigma_sd;
   real<lower=0> initial_sd;
+  int<lower=0, upper=1> prior_only;
 }
 parameters {
   real log_sigma_raw;
@@ -37,6 +38,7 @@ model {
   z_initial ~ std_normal();
   for (i in 1:(T - 1)) z_transition[i] ~ std_normal();
   // SMOOTHING_PRIOR
-  for (n in 1:N_obs)
-    y_obs[n] ~ normal(f[obs_time_idx[n]], sigma);
+  if (!prior_only)
+    for (n in 1:N_obs)
+      y_obs[n] ~ normal(f[obs_time_idx[n]], sigma);
 }

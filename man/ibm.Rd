@@ -27,7 +27,8 @@ ibm(
 
 \item{y}{Numeric observations. Replicates at the same location are allowed.}
 
-\item{infer_at}{Optional additional locations at which to infer the state.}
+\item{infer_at}{Optional additional locations at which to predict the state
+after sampling. These locations do not enlarge the Stan latent state.}
 
 \item{adaptive}{Logical; use locally adaptive IBM when \code{TRUE}.}
 
@@ -66,7 +67,8 @@ each interval has a half-Cauchy local scale \eqn{\xi_j}.
 Time is shifted and divided by its mean grid spacing and the response is
 standardized before fitting. Consequently, \code{smoothing_prior} is expressed
 on that stable internal scale. Natural-scale draws are returned by the
-extraction helpers.
+extraction helpers. Locations in \code{infer_at} are evaluated after fitting
+using exact conditional IBM bridges, avoiding additional Stan parameters.
 
 The adaptive transition over an interval of length \eqn{\Delta_j} is exactly
 bivariate normal with mean

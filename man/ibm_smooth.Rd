@@ -27,7 +27,8 @@ ibm_smooth(
 
 \item{y}{Numeric observations. Replicates at the same location are allowed.}
 
-\item{infer_at}{Optional additional locations at which to infer the state.}
+\item{infer_at}{Optional additional locations at which to predict the state
+after sampling. These locations do not enlarge the Stan latent state.}
 
 \item{adaptive}{Logical; use locally adaptive IBM when \code{TRUE}.}
 

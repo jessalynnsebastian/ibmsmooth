@@ -8,6 +8,7 @@ data {
   real<lower=0> log_sigma_sd;
   real<lower=0> global_scale;
   real<lower=0> initial_sd;
+  int<lower=0, upper=1> prior_only;
 }
 transformed data {
   vector[T - 1] sqrt_deltat = sqrt(deltat);
@@ -46,7 +47,8 @@ model {
   xi_unif ~ uniform(0, 1);
   z_initial ~ std_normal();
   for (i in 1:(T - 1)) z_transition[i] ~ std_normal();
-  y_obs ~ normal(f[obs_time_idx], sigma);
+  if (!prior_only)
+    y_obs ~ normal(f[obs_time_idx], sigma);
 }
 generated quantities {
   vector<lower=0>[T - 1] lambda_interval = square(gamma * xi);
