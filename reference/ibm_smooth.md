@@ -81,7 +81,7 @@ ibm_smooth(
 - ...:
 
   Additional arguments passed to
-  [`rstan::stan()`](https://mc-stan.org/rstan/reference/stan.html).
+  [`rstan::stan()`](https://rdrr.io/pkg/rstan/man/stan.html).
 
 ## Value
 
