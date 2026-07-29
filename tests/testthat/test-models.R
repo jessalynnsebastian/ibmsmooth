@@ -1,4 +1,4 @@
-test_that("standard and fast Stan implementations are present", {
+test_that("non-centered and centered Stan implementations are present", {
   stan_dir <- system.file("stan", package = "ibmsmooth")
   if (!nzchar(stan_dir)) {
     stan_dir <- testthat::test_path("..", "..", "inst", "stan")
@@ -8,34 +8,23 @@ test_that("standard and fast Stan implementations are present", {
   expect_identical(
     files,
     c("ibm.stan", "ibm_adaptive.stan",
-      "ibm_adaptive_fast.stan", "ibm_fast.stan")
+      "ibm_adaptive_centered.stan", "ibm_centered.stan")
   )
 })
 
-test_that("fast programs filter derivatives and draw them backward", {
+test_that("centered programs use the same exact state transition", {
   for (adaptive in c(FALSE, TRUE)) {
-    code <- ibm(get_code = TRUE, adaptive = adaptive, fast = TRUE)
-    expect_match(code, "derivative_filter_mean", fixed = TRUE)
-    expect_match(code, "derivative_filter_variance", fixed = TRUE)
-    expect_match(code, "generated quantities", fixed = TRUE)
+    code <- ibm(
+      get_code = TRUE, adaptive = adaptive, parameterization = "centered"
+    )
+    expect_match(code, "vector[T] fprime", fixed = TRUE)
+    expect_match(code, "vector[T] f", fixed = TRUE)
+    expect_match(code, "multi_normal_cholesky", fixed = TRUE)
+    expect_match(code, "h * sqrt(h) / 2", fixed = TRUE)
+    expect_match(code, "inv_sqrt(12.0)", fixed = TRUE)
     expect_match(code, "vector[T] fprime", fixed = TRUE)
     expect_false(grepl("array[T - 1] vector[2] z_transition",
                        code, fixed = TRUE))
-  }
-})
-
-test_that("filtered and augmented IBM priors have identical covariance", {
-  checks <- list(
-    verify_ibm_equivalence(c(0, 0.2, 1.1, 1.4), lambda = 0.7),
-    verify_ibm_equivalence(
-      c(-1, -0.8, 0.4, 2.5, 2.7),
-      lambda = c(0.01, 1.3, 0.08, 0.4),
-      initial_sd = 2.1
-    )
-  )
-  for (check in checks) {
-    expect_true(check$equivalent)
-    expect_lt(check$max_abs_covariance_difference, 1e-12)
   }
 })
 
@@ -67,12 +56,16 @@ test_that("adaptive Stan model matches the chapter hierarchy", {
   expect_false(grepl("operational", code, ignore.case = TRUE))
 })
 
-test_that("both Stan models can omit the likelihood for prior sampling", {
-  ordinary <- ibm(get_code = TRUE)
-  adaptive <- ibm(get_code = TRUE, adaptive = TRUE)
-  for (code in list(ordinary, adaptive)) {
-    expect_match(code, "int<lower=0, upper=1> prior_only", fixed = TRUE)
-    expect_match(code, "if (!prior_only)", fixed = TRUE)
+test_that("all Stan models can omit the likelihood for prior sampling", {
+  for (adaptive in c(FALSE, TRUE)) {
+    for (parameterization in c("noncentered", "centered")) {
+      code <- ibm(
+        get_code = TRUE, adaptive = adaptive,
+        parameterization = parameterization
+      )
+      expect_match(code, "int<lower=0, upper=1> prior_only", fixed = TRUE)
+      expect_match(code, "if (!prior_only)", fixed = TRUE)
+    }
   }
 })
 
@@ -113,7 +106,10 @@ test_that("fit input validation is performed before sampling", {
   expect_error(ibm(1:3, c(1, 1, 1)), "positive finite standard deviation")
   expect_error(ibm(c(1, 1), c(0, 1)), "At least two unique")
   expect_error(ibm(get_code = TRUE, adaptive = NA), "adaptive")
-  expect_error(ibm(get_code = TRUE, fast = NA), "fast")
+  expect_error(
+    ibm(get_code = TRUE, parameterization = "hybrid"),
+    "arg"
+  )
   expect_error(
     ibm(get_code = TRUE, smoothing_prior = ""),
     "one non-empty character"

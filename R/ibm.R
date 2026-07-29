@@ -10,8 +10,9 @@
 #' @param infer_at Optional additional locations at which to predict the state
 #'   after sampling. These locations do not enlarge the Stan latent state.
 #' @param adaptive Logical; use locally adaptive IBM when `TRUE`.
-#' @param fast Logical; use the derivative-marginalized implementation when
-#'   `TRUE`. It defines the same IBM model but samples fewer latent variables.
+#' @param parameterization Either `"noncentered"` (the default) or
+#'   `"centered"`. Both define the same IBM model with different HMC
+#'   coordinates.
 #' @param smoothing_prior A character string containing valid Stan code for the
 #'   prior on the positive ordinary-IBM smoothing parameter `tau`. For example,
 #'   `"tau ~ normal(0, 0.5);"` or `"tau ~ student_t(3, 0, 1);"`. This is used
@@ -35,6 +36,16 @@
 #' extraction helpers. Locations in `infer_at` are evaluated after fitting
 #' using exact conditional IBM bridges, avoiding additional Stan parameters.
 #'
+#' The non-centered parameterization represents each state transition with
+#' standard-normal innovations. It is usually the better starting point when
+#' observations are sparse or noisy, or when most adaptive local scales are
+#' strongly shrunk. The centered parameterization samples `f` and `fprime`
+#' directly under the same transition density. It can be more efficient when
+#' the latent states and large local changes are strongly identified by the
+#' likelihood. Neither parameterization dominates in every dataset. Fit both
+#' when practical and compare divergences, R-hat, effective sample size per
+#' second, leapfrog counts, and treedepth hits with [get_diagnostics()].
+#'
 #' The adaptive transition over an interval of length \eqn{\Delta_j} is exactly
 #' bivariate normal with mean
 #' \eqn{(f'_j, f_j+\Delta_j f'_j)} and covariance
@@ -44,7 +55,7 @@
 #' @return An object of class `ibmfit`, or Stan code when `get_code = TRUE`.
 #' @export
 ibm <- function(t = NULL, y = NULL, infer_at = NULL, adaptive = FALSE,
-                fast = FALSE,
+                parameterization = c("noncentered", "centered"),
                 smoothing_prior = "tau ~ lognormal(-2, 0.5);",
                 global_scale = 0.1,
                 log_sigma = list(mu = -1, sd = 1),
@@ -55,7 +66,8 @@ ibm <- function(t = NULL, y = NULL, infer_at = NULL, adaptive = FALSE,
                 max_treedepth = 12, adapt_delta = 0.9,
                 get_code = FALSE, ...) {
   .ibm_fit(
-    t = t, y = y, infer_at = infer_at, adaptive = adaptive, fast = fast,
+    t = t, y = y, infer_at = infer_at, adaptive = adaptive,
+    parameterization = parameterization,
     smoothing_prior = smoothing_prior, global_scale = global_scale,
     log_sigma = log_sigma, initial_sd = initial_sd,
     iter = iter, chains = chains, cores = cores, init = init,

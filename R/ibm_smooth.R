@@ -1,8 +1,14 @@
-.ibm_stan_path <- function(adaptive, fast = FALSE) {
+.ibm_stan_path <- function(adaptive,
+                           parameterization = c("noncentered", "centered")) {
+  parameterization <- match.arg(parameterization)
   filename <- if (isTRUE(adaptive)) {
-    if (isTRUE(fast)) "ibm_adaptive_fast.stan" else "ibm_adaptive.stan"
+    if (parameterization == "centered") {
+      "ibm_adaptive_centered.stan"
+    } else {
+      "ibm_adaptive.stan"
+    }
   } else {
-    if (isTRUE(fast)) "ibm_fast.stan" else "ibm.stan"
+    if (parameterization == "centered") "ibm_centered.stan" else "ibm.stan"
   }
   installed <- system.file("stan", filename, package = "ibmsmooth")
   if (nzchar(installed)) return(installed)
@@ -11,9 +17,12 @@
   stop("Could not locate ", filename, ".", call. = FALSE)
 }
 
-.ibm_stan_code <- function(adaptive, smoothing_prior, fast = FALSE) {
+.ibm_stan_code <- function(
+    adaptive, smoothing_prior,
+    parameterization = c("noncentered", "centered")) {
+  parameterization <- match.arg(parameterization)
   code <- paste(
-    readLines(.ibm_stan_path(adaptive, fast), warn = FALSE),
+    readLines(.ibm_stan_path(adaptive, parameterization), warn = FALSE),
     collapse = "\n"
   )
   if (!isTRUE(adaptive)) {
@@ -39,14 +48,12 @@
 .ibm_fit <- function(t, y, infer_at, adaptive, smoothing_prior, global_scale,
                      log_sigma, initial_sd, iter, chains, cores, init = "random",
                      max_treedepth, adapt_delta, get_code, prior_only = FALSE,
-                     fast = FALSE, ...) {
+                     parameterization = c("noncentered", "centered"), ...) {
   if (!is.logical(adaptive) || length(adaptive) != 1L || is.na(adaptive)) {
     stop("adaptive must be TRUE or FALSE.", call. = FALSE)
   }
-  if (!is.logical(fast) || length(fast) != 1L || is.na(fast)) {
-    stop("fast must be TRUE or FALSE.", call. = FALSE)
-  }
-  code <- .ibm_stan_code(adaptive, smoothing_prior, fast)
+  parameterization <- match.arg(parameterization)
+  code <- .ibm_stan_code(adaptive, smoothing_prior, parameterization)
   if (isTRUE(get_code) || (is.null(t) && is.null(y))) return(code)
 
   if (!requireNamespace("rstan", quietly = TRUE)) {
@@ -124,13 +131,13 @@
       prediction_grid_raw = sort(unique(c(grid_raw, as.numeric(infer_at))))
     ),
     adaptive = adaptive,
-    fast = isTRUE(fast),
+    parameterization = parameterization,
     smoothing_prior = if (adaptive) NULL else smoothing_prior,
     prior_only = isTRUE(prior_only),
     fit_spec = list(
       t = t_raw, y = y_raw,
       infer_at = sort(unique(as.numeric(infer_at))),
-      adaptive = adaptive, fast = isTRUE(fast),
+      adaptive = adaptive, parameterization = parameterization,
       smoothing_prior = smoothing_prior,
       global_scale = global_scale, log_sigma = log_sigma,
       initial_sd = initial_sd, max_treedepth = max_treedepth,
@@ -150,7 +157,7 @@
 #' @return An object of class `ibmfit`, or Stan code when `get_code = TRUE`.
 #' @export
 ibm_smooth <- function(t = NULL, y = NULL, infer_at = NULL, adaptive = FALSE,
-                       fast = FALSE,
+                       parameterization = c("noncentered", "centered"),
                        smoothing_prior = "tau ~ lognormal(-2, 0.5);",
                        global_scale = 0.1,
                        log_sigma = list(mu = -1, sd = 1),
@@ -161,7 +168,8 @@ ibm_smooth <- function(t = NULL, y = NULL, infer_at = NULL, adaptive = FALSE,
                        max_treedepth = 12, adapt_delta = 0.9,
                        get_code = FALSE, ...) {
   ibm(
-    t = t, y = y, infer_at = infer_at, adaptive = adaptive, fast = fast,
+    t = t, y = y, infer_at = infer_at, adaptive = adaptive,
+    parameterization = parameterization,
     smoothing_prior = smoothing_prior, global_scale = global_scale,
     log_sigma = log_sigma, initial_sd = initial_sd,
     iter = iter, chains = chains, cores = cores, init = init,

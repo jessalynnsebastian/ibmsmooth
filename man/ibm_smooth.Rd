@@ -9,7 +9,7 @@ ibm_smooth(
   y = NULL,
   infer_at = NULL,
   adaptive = FALSE,
-  fast = FALSE,
+  parameterization = c("noncentered", "centered"),
   smoothing_prior = "tau ~ lognormal(-2, 0.5);",
   global_scale = 0.1,
   log_sigma = list(mu = -1, sd = 1),
@@ -34,8 +34,9 @@ after sampling. These locations do not enlarge the Stan latent state.}
 
 \item{adaptive}{Logical; use locally adaptive IBM when \code{TRUE}.}
 
-\item{fast}{Logical; use the derivative-marginalized implementation when
-\code{TRUE}. It defines the same IBM model but samples fewer latent variables.}
+\item{parameterization}{Either \code{"noncentered"} (the default) or
+\code{"centered"}. Both define the same IBM model with different HMC
+coordinates.}
 
 \item{smoothing_prior}{A character string containing valid Stan code for the
 prior on the positive ordinary-IBM smoothing parameter \code{tau}. For example,

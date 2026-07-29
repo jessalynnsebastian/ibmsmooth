@@ -9,7 +9,7 @@ ibm(
   y = NULL,
   infer_at = NULL,
   adaptive = FALSE,
-  fast = FALSE,
+  parameterization = c("noncentered", "centered"),
   smoothing_prior = "tau ~ lognormal(-2, 0.5);",
   global_scale = 0.1,
   log_sigma = list(mu = -1, sd = 1),
@@ -34,8 +34,9 @@ after sampling. These locations do not enlarge the Stan latent state.}
 
 \item{adaptive}{Logical; use locally adaptive IBM when \code{TRUE}.}
 
-\item{fast}{Logical; use the derivative-marginalized implementation when
-\code{TRUE}. It defines the same IBM model but samples fewer latent variables.}
+\item{parameterization}{Either \code{"noncentered"} (the default) or
+\code{"centered"}. Both define the same IBM model with different HMC
+coordinates.}
 
 \item{smoothing_prior}{A character string containing valid Stan code for the
 prior on the positive ordinary-IBM smoothing parameter \code{tau}. For example,
@@ -76,6 +77,16 @@ standardized before fitting. Consequently, \code{smoothing_prior} is expressed
 on that stable internal scale. Natural-scale draws are returned by the
 extraction helpers. Locations in \code{infer_at} are evaluated after fitting
 using exact conditional IBM bridges, avoiding additional Stan parameters.
+
+The non-centered parameterization represents each state transition with
+standard-normal innovations. It is usually the better starting point when
+observations are sparse or noisy, or when most adaptive local scales are
+strongly shrunk. The centered parameterization samples \code{f} and \code{fprime}
+directly under the same transition density. It can be more efficient when
+the latent states and large local changes are strongly identified by the
+likelihood. Neither parameterization dominates in every dataset. Fit both
+when practical and compare divergences, R-hat, effective sample size per
+second, leapfrog counts, and treedepth hits with \code{\link[=get_diagnostics]{get_diagnostics()}}.
 
 The adaptive transition over an interval of length \eqn{\Delta_j} is exactly
 bivariate normal with mean

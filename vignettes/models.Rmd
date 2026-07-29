@@ -80,11 +80,11 @@ fit_adaptive <- ibm(
   adapt_delta = 0.99
 )
 
-# Same model with derivative states marginalized during HMC
-fit_adaptive_fast <- ibm(
+# Same model in centered HMC coordinates
+fit_adaptive_centered <- ibm(
   t, y,
   adaptive = TRUE,
-  fast = TRUE,
+  parameterization = "centered",
   global_scale = 0.1,
   chains = 4,
   iter = 2000,
