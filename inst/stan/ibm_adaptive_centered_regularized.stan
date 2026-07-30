@@ -8,6 +8,8 @@ data {
   real<lower=0> log_sigma_sd;
   real<lower=0> global_scale;
   int<lower=1, upper=2> global_prior;
+  real<lower=0> slab_scale;
+  real<lower=0> slab_df;
   real<lower=0> initial_sd;
   int<lower=0, upper=1> prior_only;
 }
@@ -15,6 +17,7 @@ parameters {
   real log_sigma_raw;
   real<lower=0, upper=1> gamma_unif;
   vector<lower=0, upper=1>[T - 1] xi_unif;
+  real<lower=0> slab_aux;
   vector[T] fprime;
   vector[T] f;
 }
@@ -24,17 +27,22 @@ transformed parameters {
     ? global_scale * tan(0.5 * pi() * gamma_unif)
     : global_scale * inv_Phi(0.5 + 0.5 * gamma_unif);
   vector<lower=0>[T - 1] xi = tan(0.5 * pi() * xi_unif);
+  real<lower=0> slab = slab_scale * sqrt(slab_aux);
+  vector<lower=0>[T - 1] xi_regularized =
+    sqrt(square(slab) * square(xi)
+         ./ (square(slab) + square(gamma) * square(xi)));
 }
 model {
   log_sigma_raw ~ std_normal();
   gamma_unif ~ uniform(0, 1);
   xi_unif ~ uniform(0, 1);
+  slab_aux ~ inv_gamma(0.5 * slab_df, 0.5 * slab_df);
   fprime[1] ~ normal(0, initial_sd);
   f[1] ~ normal(0, initial_sd);
 
   for (i in 2:T) {
     real h = deltat[i - 1];
-    real tau_i = gamma * xi[i - 1];
+    real tau_i = gamma * xi_regularized[i - 1];
     vector[2] state = [fprime[i], f[i]]';
     vector[2] transition_mean =
       [fprime[i - 1], f[i - 1] + h * fprime[i - 1]]';
@@ -51,5 +59,6 @@ model {
     y_obs ~ normal(f[obs_time_idx], sigma);
 }
 generated quantities {
-  vector<lower=0>[T - 1] lambda_interval = square(gamma * xi);
+  vector<lower=0>[T - 1] lambda_interval =
+    square(gamma * xi_regularized);
 }

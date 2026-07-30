@@ -74,7 +74,9 @@ how much its slope is permitted to evolve over an interval.
 fit_adaptive <- ibm(
   t, y,
   adaptive = TRUE,
-  global_scale = 0.1,
+  global_prior = "half_cauchy",
+  global_upper = 1,
+  global_alpha = 0.05,
   chains = 4,
   iter = 2000,
   adapt_delta = 0.99
@@ -85,7 +87,20 @@ fit_adaptive_centered <- ibm(
   t, y,
   adaptive = TRUE,
   parameterization = "centered",
-  global_scale = 0.1,
+  global_prior = "half_normal",
+  global_upper = 1,
+  global_alpha = 0.05,
+  chains = 4,
+  iter = 2000,
+  adapt_delta = 0.99
+)
+
+fit_adaptive_regularized <- ibm(
+  t, y,
+  adaptive = TRUE,
+  adaptive_prior = "regularized_horseshoe",
+  slab_scale = 1,
+  slab_df = 4,
   chains = 4,
   iter = 2000,
   adapt_delta = 0.99

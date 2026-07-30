@@ -11,7 +11,13 @@ ibm_smooth(
   adaptive = FALSE,
   parameterization = c("noncentered", "centered"),
   smoothing_prior = "tau ~ lognormal(-2, 0.5);",
-  global_scale = 0.1,
+  global_prior = c("half_cauchy", "half_normal"),
+  global_upper = 1,
+  global_alpha = 0.05,
+  adaptive_prior = c("horseshoe", "regularized_horseshoe"),
+  slab_scale = 1,
+  slab_df = 4,
+  regularized_retry = c("ask", "never"),
   log_sigma = list(mu = -1, sd = 1),
   initial_sd = 5,
   iter = 2000,
@@ -43,8 +49,26 @@ prior on the positive ordinary-IBM smoothing parameter \code{tau}. For example,
 \code{"tau ~ normal(0, 0.5);"} or \code{"tau ~ student_t(3, 0, 1);"}. This is used
 only when \code{adaptive = FALSE}.}
 
-\item{global_scale}{Positive half-Cauchy scale for \code{gamma} in the adaptive
-global--local prior.}
+\item{global_prior}{Prior family for the adaptive global scale \code{gamma}:
+either \code{"half_cauchy"} or \code{"half_normal"}.}
+
+\item{global_upper}{Positive upper bound \code{U} used to calibrate the global
+prior through \code{Pr(gamma * sigma_ref > U) = global_alpha}.}
+
+\item{global_alpha}{Tail probability used in the global-prior calibration.}
+
+\item{adaptive_prior}{Adaptive local-scale prior. \code{"horseshoe"} is the
+default; \code{"regularized_horseshoe"} adds a finite Student-t slab.}
+
+\item{slab_scale}{Positive slab scale for the regularized horseshoe, on the
+internally standardized derivative-diffusion scale.}
+
+\item{slab_df}{Positive slab degrees of freedom. The default is 4.}
+
+\item{regularized_retry}{Either \code{"ask"} (the default) or \code{"never"}.
+After a problematic interactive ordinary-horseshoe fit, \code{"ask"} offers
+to rerun the same model and HMC settings with a regularized horseshoe.
+Non-interactive sessions never start a refit automatically.}
 
 \item{log_sigma}{List with \code{mu} and positive \code{sd} for the log observation
 standard deviation on the internally standardized response scale.}

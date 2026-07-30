@@ -10,7 +10,8 @@ get_samples(ibmfit, param = c("f", "fprime"), n_samples = NULL)
 \item{ibmfit}{An \code{ibmfit} object.}
 
 \item{param}{Stan parameter name. Common choices are \code{"f"}, \code{"fprime"},
-\code{"sigma"}, \code{"tau"}, \code{"gamma"}, \code{"xi"}, and \code{"lambda_interval"}.}
+\code{"sigma"}, \code{"tau"}, \code{"gamma"}, \code{"xi"}, \code{"xi_regularized"}, \code{"slab"},
+and \code{"lambda_interval"}.}
 
 \item{n_samples}{Maximum number of draws; \code{NULL} keeps all draws.}
 }

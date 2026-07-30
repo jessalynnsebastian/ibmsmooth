@@ -11,7 +11,13 @@ ibm(
   adaptive = FALSE,
   parameterization = c("noncentered", "centered"),
   smoothing_prior = "tau ~ lognormal(-2, 0.5);",
-  global_scale = 0.1,
+  global_prior = c("half_cauchy", "half_normal"),
+  global_upper = 1,
+  global_alpha = 0.05,
+  adaptive_prior = c("horseshoe", "regularized_horseshoe"),
+  slab_scale = 1,
+  slab_df = 4,
+  regularized_retry = c("ask", "never"),
   log_sigma = list(mu = -1, sd = 1),
   initial_sd = 5,
   iter = 2000,
@@ -43,8 +49,26 @@ prior on the positive ordinary-IBM smoothing parameter \code{tau}. For example,
 \code{"tau ~ normal(0, 0.5);"} or \code{"tau ~ student_t(3, 0, 1);"}. This is used
 only when \code{adaptive = FALSE}.}
 
-\item{global_scale}{Positive half-Cauchy scale for \code{gamma} in the adaptive
-global--local prior.}
+\item{global_prior}{Prior family for the adaptive global scale \code{gamma}:
+either \code{"half_cauchy"} or \code{"half_normal"}.}
+
+\item{global_upper}{Positive upper bound \code{U} used to calibrate the global
+prior through \code{Pr(gamma * sigma_ref > U) = global_alpha}.}
+
+\item{global_alpha}{Tail probability used in the global-prior calibration.}
+
+\item{adaptive_prior}{Adaptive local-scale prior. \code{"horseshoe"} is the
+default; \code{"regularized_horseshoe"} adds a finite Student-t slab.}
+
+\item{slab_scale}{Positive slab scale for the regularized horseshoe, on the
+internally standardized derivative-diffusion scale.}
+
+\item{slab_df}{Positive slab degrees of freedom. The default is 4.}
+
+\item{regularized_retry}{Either \code{"ask"} (the default) or \code{"never"}.
+After a problematic interactive ordinary-horseshoe fit, \code{"ask"} offers
+to rerun the same model and HMC settings with a regularized horseshoe.
+Non-interactive sessions never start a refit automatically.}
 
 \item{log_sigma}{List with \code{mu} and positive \code{sd} for the log observation
 standard deviation on the internally standardized response scale.}
@@ -72,11 +96,20 @@ scale or the locally adaptive IBM described by
 each interval has a half-Cauchy local scale \eqn{\xi_j}.
 }
 \details{
-Time is shifted and divided by its mean grid spacing and the response is
-standardized before fitting. Consequently, \code{smoothing_prior} is expressed
+Time is mapped to the unit interval and the response is centered and scaled
+to unit standard deviation before fitting. Consequently, \code{smoothing_prior}
+is expressed
 on that stable internal scale. Natural-scale draws are returned by the
 extraction helpers. Locations in \code{infer_at} are evaluated after fitting
 using exact conditional IBM bridges, avoiding additional Stan parameters.
+
+For an adaptive fit, \code{sigma_ref} is the geometric mean of the marginal
+standard deviations of the unit-diffusion IBM departure from its initial
+linear trajectory. Conditioning makes the stochastic variance zero at the
+first location, so the geometric mean is taken over subsequent locations.
+The selected global prior is assigned a scale \code{s_gamma} such that
+\code{Pr(gamma * sigma_ref > global_upper) = global_alpha}. The fitted object
+retains these as \code{data$reference_sd} and \code{fit_spec$global_scale}.
 
 The non-centered parameterization represents each state transition with
 standard-normal innovations. It is usually the better starting point when
@@ -87,6 +120,17 @@ the latent states and large local changes are strongly identified by the
 likelihood. Neither parameterization dominates in every dataset. Fit both
 when practical and compare divergences, R-hat, effective sample size per
 second, leapfrog counts, and treedepth hits with \code{\link[=get_diagnostics]{get_diagnostics()}}.
+
+With \code{adaptive_prior = "regularized_horseshoe"}, the effective local scale
+is
+\deqn{\tilde\xi_j^2 =
+\frac{c^2\xi_j^2}{c^2+\gamma^2\xi_j^2},}
+where \eqn{c = \code{slab_scale}\sqrt{c_{\mathrm{aux}}}} and
+\eqn{c_{\mathrm{aux}}\sim\mathrm{InvGamma}(\nu/2,\nu/2)} with
+\eqn{\nu=\code{slab_df}}. Thus the effective interval diffusion standard
+deviation \eqn{\gamma\tilde\xi_j} approaches the finite slab scale for
+extreme local scales. This can stabilize isolated, strongly identified
+changes while preserving horseshoe shrinkage near zero.
 
 The adaptive transition over an interval of length \eqn{\Delta_j} is exactly
 bivariate normal with mean

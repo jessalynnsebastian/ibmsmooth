@@ -26,7 +26,7 @@ N_2\left[
 Ordinary IBM sets \(\lambda_j=\tau^2\). The adaptive model sets
 \(\lambda_j=\gamma^2\xi_j^2\), with
 \(\xi_j\sim\mathrm{C}^+(0,1)\) and
-\(\gamma\sim\mathrm{C}^+(0,\texttt{global_scale})\).
+\(\gamma\) has a reference-process-calibrated half-Cauchy or half-normal prior.
 
 ## Installation
 
@@ -50,7 +50,9 @@ fit_half_t <- ibm(
 fit_adaptive <- ibm(
   t, y,
   adaptive = TRUE,
-  global_scale = 0.1
+  global_prior = "half_cauchy",
+  global_upper = 1,
+  global_alpha = 0.05
 )
 
 # Centered implementation of the same model
@@ -58,8 +60,23 @@ fit_adaptive_centered <- ibm(
   t, y,
   adaptive = TRUE,
   parameterization = "centered",
-  global_scale = 0.1
+  global_prior = "half_normal",
+  global_upper = 1,
+  global_alpha = 0.05
 )
+
+# Optional finite-slab regularized horseshoe
+fit_adaptive_regularized <- ibm(
+  t, y,
+  adaptive = TRUE,
+  adaptive_prior = "regularized_horseshoe",
+  slab_scale = 1,
+  slab_df = 4
+)
+
+# The default regularized_retry = "ask" also detects the specific combination
+# of poor HMC diagnostics and local scales pinned near the half-Cauchy boundary.
+# In an interactive session it offers to run the regularized fit above.
 
 plot(fit_adaptive)
 plot_diffusion(fit_adaptive)
@@ -86,6 +103,23 @@ most interval innovations are weakly informed or strongly shrunk.
 more large changes are strongly identified by the likelihood. Both use the
 same exact IBM transitions and priors; they differ only in their HMC
 coordinates.
+
+The adaptive default remains `adaptive_prior = "horseshoe"`. The optional
+regularized horseshoe retains shrinkage near zero but caps the effective local
+diffusion scale with a Student-t slab. `slab_scale` is specified on the
+internally standardized derivative-diffusion scale.
+
+The post-fit recommendation can also be inspected directly:
+
+```r
+check_regularized_horseshoe(fit_adaptive)
+```
+
+Interactive retries return the regularized fit and store the triggering
+ordinary-horseshoe diagnostic summary in `fit$retry_info`. In scripts and other
+non-interactive sessions, the package prints the recommendation but never
+starts another fit automatically. Use `regularized_retry = "never"` to disable
+the check and prompt entirely.
 
 ## License
 

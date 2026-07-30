@@ -8,8 +8,51 @@ test_that("non-centered and centered Stan implementations are present", {
   expect_identical(
     files,
     c("ibm.stan", "ibm_adaptive.stan",
-      "ibm_adaptive_centered.stan", "ibm_centered.stan")
+      "ibm_adaptive_centered.stan",
+      "ibm_adaptive_centered_regularized.stan",
+      "ibm_adaptive_regularized.stan", "ibm_centered.stan")
   )
+})
+
+test_that("horseshoe is default and regularized horseshoe is selectable", {
+  default_code <- ibm(get_code = TRUE, adaptive = TRUE)
+  regularized_code <- ibm(
+    get_code = TRUE, adaptive = TRUE,
+    adaptive_prior = "regularized_horseshoe"
+  )
+  centered_code <- ibm(
+    get_code = TRUE, adaptive = TRUE,
+    adaptive_prior = "regularized_horseshoe",
+    parameterization = "centered"
+  )
+  expect_false(grepl("slab_aux", default_code, fixed = TRUE))
+  for (code in list(regularized_code, centered_code)) {
+    expect_match(code, "slab_aux ~ inv_gamma", fixed = TRUE)
+    expect_match(code, "xi_regularized", fixed = TRUE)
+    expect_match(
+      code,
+      "square(slab) + square(gamma) * square(xi)",
+      fixed = TRUE
+    )
+    expect_match(code, "square(gamma * xi_regularized)", fixed = TRUE)
+  }
+})
+
+test_that("regularized retry is explicit and non-applicable fits are ignored", {
+  expect_identical(
+    eval(formals(ibm)$regularized_retry),
+    c("ask", "never")
+  )
+  expect_error(
+    ibm(get_code = TRUE, regularized_retry = "always"),
+    "arg"
+  )
+  mock <- structure(
+    list(stanfit = list(), data = list(), adaptive = FALSE),
+    class = c("ibmfit", "list")
+  )
+  check <- check_regularized_horseshoe(mock)
+  expect_false(check$recommended)
 })
 
 test_that("centered programs use the same exact state transition", {
@@ -40,11 +83,9 @@ test_that("adaptive Stan model matches the chapter hierarchy", {
   code <- ibm(get_code = TRUE, adaptive = TRUE)
   expect_match(code, "real tau_i = gamma * xi[i - 1]", fixed = TRUE)
   expect_match(code, "lambda_interval = square(gamma * xi)", fixed = TRUE)
-  expect_match(
-    code,
-    "gamma = global_scale * tan(0.5 * pi() * gamma_unif)",
-    fixed = TRUE
-  )
+  expect_match(code, "global_prior == 1", fixed = TRUE)
+  expect_match(code, "global_scale * tan", fixed = TRUE)
+  expect_match(code, "global_scale * inv_Phi", fixed = TRUE)
   expect_match(code, "xi = tan(0.5 * pi() * xi_unif)", fixed = TRUE)
   expect_match(code, "gamma_unif ~ uniform(0, 1)", fixed = TRUE)
   expect_match(code, "xi_unif ~ uniform(0, 1)", fixed = TRUE)
@@ -54,6 +95,32 @@ test_that("adaptive Stan model matches the chapter hierarchy", {
   expect_match(code, "generated quantities", fixed = TRUE)
   expect_match(code, "y_obs ~ normal(f[obs_time_idx], sigma)", fixed = TRUE)
   expect_false(grepl("operational", code, ignore.case = TRUE))
+})
+
+test_that("reference-process global priors are calibrated correctly", {
+  grid <- c(0, 0.1, 0.4, 1)
+  reference_sd <- ibmsmooth:::.ibm_reference_sd(grid)
+  expect_equal(
+    reference_sd,
+    exp(mean(log(sqrt(grid[-1]^3 / 3))))
+  )
+
+  upper <- 1.2
+  alpha <- 0.1
+  normal_scale <- ibmsmooth:::.ibm_global_scale(
+    reference_sd, upper, alpha, "half_normal"
+  )
+  cauchy_scale <- ibmsmooth:::.ibm_global_scale(
+    reference_sd, upper, alpha, "half_cauchy"
+  )
+  expect_equal(
+    2 * stats::pnorm(-upper / (reference_sd * normal_scale)),
+    alpha
+  )
+  expect_equal(
+    1 - 2 / pi * atan(upper / (reference_sd * cauchy_scale)),
+    alpha
+  )
 })
 
 test_that("all Stan models can omit the likelihood for prior sampling", {
@@ -108,6 +175,14 @@ test_that("fit input validation is performed before sampling", {
   expect_error(ibm(get_code = TRUE, adaptive = NA), "adaptive")
   expect_error(
     ibm(get_code = TRUE, parameterization = "hybrid"),
+    "arg"
+  )
+  expect_error(
+    ibm(get_code = TRUE, adaptive = TRUE, adaptive_prior = "other"),
+    "arg"
+  )
+  expect_error(
+    ibm(get_code = TRUE, adaptive = TRUE, global_prior = "other"),
     "arg"
   )
   expect_error(

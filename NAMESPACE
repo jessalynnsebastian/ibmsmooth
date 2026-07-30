@@ -3,6 +3,7 @@
 S3method(plot,ibmfit)
 S3method(print,summary_ibmfit)
 S3method(summary,ibmfit)
+export(check_regularized_horseshoe)
 export(get_curve_samples)
 export(get_curve_summary)
 export(get_diagnostics)

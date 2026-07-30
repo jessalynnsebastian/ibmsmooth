@@ -19,7 +19,8 @@
 #'
 #' @param ibmfit An `ibmfit` object.
 #' @param param Stan parameter name. Common choices are `"f"`, `"fprime"`,
-#'   `"sigma"`, `"tau"`, `"gamma"`, `"xi"`, and `"lambda_interval"`.
+#'   `"sigma"`, `"tau"`, `"gamma"`, `"xi"`, `"xi_regularized"`, `"slab"`,
+#'   and `"lambda_interval"`.
 #' @param n_samples Maximum number of draws; `NULL` keeps all draws.
 #' @return A matrix with posterior draws in rows.
 #' @export
@@ -28,7 +29,7 @@ get_samples <- function(ibmfit, param = c("f", "fprime"),
   param <- match.arg(
     param,
     c("f", "fprime", "sigma", "tau", "gamma", "xi",
-      "tau_interval", "lambda_interval")
+      "xi_regularized", "slab", "tau_interval", "lambda_interval")
   )
   draws <- .stan_draws(ibmfit, param, n_samples)
   dat <- ibmfit$data
@@ -38,7 +39,7 @@ get_samples <- function(ibmfit, param = c("f", "fprime"),
     draws <- draws * dat$y_sd / dat$dt_mean
   } else if (param == "sigma") {
     draws <- draws * dat$y_sd
-  } else if (param %in% c("tau", "gamma", "tau_interval")) {
+  } else if (param %in% c("tau", "gamma", "slab", "tau_interval")) {
     draws <- draws * dat$y_sd / dat$dt_mean^(3 / 2)
   } else if (param == "lambda_interval") {
     draws <- draws * dat$y_sd^2 / dat$dt_mean^3
@@ -112,6 +113,10 @@ get_hyperparameter_samples <- function(ibmfit, n_samples = 1000,
                                        format = c("long", "wide")) {
   format <- match.arg(format)
   names <- c("sigma", if (isTRUE(ibmfit$adaptive)) "gamma" else "tau")
+  if (isTRUE(ibmfit$adaptive) &&
+      identical(ibmfit$adaptive_prior, "regularized_horseshoe")) {
+    names <- c(names, "slab")
+  }
   if (isTRUE(ibmfit$adaptive)) names <- c(names, "lambda_interval")
   pieces <- lapply(names, function(name) {
     x <- get_samples(ibmfit, name, n_samples)
