@@ -53,15 +53,20 @@ get_samples <- function(ibmfit, param = c("f", "fprime"),
 #' @param param One of `"f"`, `"fprime"`, or `"both"`.
 #' @param n_samples Maximum number of draws.
 #' @param format Either `"matrix"` or `"long"`.
+#' @param new_t Optional finite locations at which to extract either curve.
+#' @param seed Optional seed for conditional bridge draws at new locations.
 #' @return A matrix, list of matrices, or long data frame.
 #' @export
 get_curve_samples <- function(ibmfit, param = c("f", "fprime", "both"),
                               n_samples = 1000,
-                              format = c("matrix", "long")) {
+                              format = c("matrix", "long"),
+                              new_t = NULL, seed = NULL) {
   param <- match.arg(param)
   format <- match.arg(format)
   requested <- if (param == "both") c("f", "fprime") else param
-  prediction <- predict_curve(ibmfit, n_samples = n_samples)
+  prediction <- predict_curve(
+    ibmfit, new_t = new_t, n_samples = n_samples, seed = seed
+  )
   draws <- prediction[requested]
   if (format == "matrix") {
     if (length(draws) == 1L) return(draws[[1L]])
@@ -84,11 +89,20 @@ get_curve_samples <- function(ibmfit, param = c("f", "fprime", "both"),
 #' @param ibmfit An `ibmfit` object.
 #' @param n_samples Maximum number of draws.
 #' @param probs Posterior probabilities.
+#' @param param One of `"f"`, `"fprime"`, or `"both"`.
+#' @param new_t Optional finite locations at which to summarize either curve.
+#' @param seed Optional seed for conditional bridge draws at new locations.
 #' @return A data frame with pointwise summaries.
 #' @export
 get_curve_summary <- function(ibmfit, n_samples = 1000,
-                              probs = c(0.025, 0.5, 0.975)) {
-  draws <- get_curve_samples(ibmfit, "both", n_samples)
+                              probs = c(0.025, 0.5, 0.975),
+                              param = c("both", "f", "fprime"),
+                              new_t = NULL, seed = NULL) {
+  param <- match.arg(param)
+  draws <- get_curve_samples(
+    ibmfit, param, n_samples, "matrix", new_t = new_t, seed = seed
+  )
+  if (param != "both") draws <- setNames(list(draws), param)
   prediction_t <- as.numeric(colnames(draws[[1L]]))
   do.call(rbind, lapply(names(draws), function(name) {
     x <- draws[[name]]
@@ -100,6 +114,111 @@ get_curve_summary <- function(ibmfit, n_samples = 1000,
       q, row.names = NULL, check.names = FALSE
     )
   }))
+}
+
+.evaluate_curve_truth <- function(truth, t, name) {
+  if (is.function(truth)) truth <- truth(t)
+  if (!is.numeric(truth) || length(truth) != length(t) ||
+      any(!is.finite(truth))) {
+    stop(
+      "truth$", name, " must be a function of t or a finite numeric vector ",
+      "with one value per evaluation location.", call. = FALSE
+    )
+  }
+  as.numeric(truth)
+}
+
+.empirical_crps <- function(draws, truth) {
+  n <- nrow(draws)
+  first_term <- colMeans(abs(sweep(draws, 2L, truth, "-")))
+  if (n == 1L) return(first_term)
+  coefficients <- 2 * seq_len(n) - n - 1
+  pair_term <- vapply(seq_len(ncol(draws)), function(j) {
+    sum(coefficients * sort(draws[, j])) / n^2
+  }, numeric(1L))
+  first_term - pair_term
+}
+
+.curve_performance <- function(draws, truth, t, level, parameter) {
+  alpha <- 1 - level
+  lower <- apply(draws, 2L, stats::quantile, probs = alpha / 2,
+                 names = FALSE)
+  upper <- apply(draws, 2L, stats::quantile, probs = 1 - alpha / 2,
+                 names = FALSE)
+  estimate <- apply(draws, 2L, stats::median)
+  pointwise <- data.frame(
+    t = t, parameter = parameter, truth = truth, estimate = estimate,
+    absolute_deviation = abs(estimate - truth),
+    interval_width = upper - lower,
+    covered = truth >= lower & truth <= upper,
+    crps = .empirical_crps(draws, truth),
+    lower = lower, upper = upper, row.names = NULL
+  )
+  aggregate <- data.frame(
+    parameter = parameter,
+    MAD = mean(pointwise$absolute_deviation),
+    MCIW = mean(pointwise$interval_width),
+    Coverage = 100 * mean(pointwise$covered),
+    CRPS = mean(pointwise$crps),
+    level = level, n_locations = length(t), row.names = NULL
+  )
+  list(aggregate = aggregate, pointwise = pointwise)
+}
+
+#' Summarize function and derivative estimation performance
+#'
+#' Computes mean absolute deviation (MAD) of the posterior median, mean
+#' credible interval width (MCIW), empirical coverage percentage, and the
+#' empirical continuous ranked probability score (CRPS), pointwise and averaged
+#' across evaluation locations.
+#'
+#' @param ibmfit An `ibmfit` object.
+#' @param truth Named list containing `f` and/or `fprime`. Each element can be a
+#'   numeric vector evaluated at `new_t` or a function that accepts `new_t`.
+#' @param new_t Optional finite evaluation locations. By default, uses the
+#'   fitted prediction grid.
+#' @param level Credible interval confidence level strictly between zero and
+#'   one.
+#' @param n_samples Maximum number of posterior draws.
+#' @param seed Optional seed for conditional bridge draws at new locations.
+#' @param pointwise If `TRUE`, return both aggregate and location-specific
+#'   results; otherwise return only the aggregate data frame.
+#' @return A data frame with one row per supplied truth, or a list containing
+#'   `aggregate` and `pointwise` data frames when `pointwise = TRUE`.
+#' @export
+summarize_performance <- function(ibmfit, truth, new_t = NULL, level = 0.95,
+                                  n_samples = 1000, seed = NULL,
+                                  pointwise = FALSE) {
+  if (!is.list(truth) || is.null(names(truth)) ||
+      !any(c("f", "fprime") %in% names(truth))) {
+    stop("truth must be a named list containing f and/or fprime.",
+         call. = FALSE)
+  }
+  unknown <- setdiff(names(truth), c("f", "fprime"))
+  if (length(unknown)) {
+    stop("Unknown truth component: ", unknown[1L], ".", call. = FALSE)
+  }
+  if (!is.numeric(level) || length(level) != 1L || !is.finite(level) ||
+      level <= 0 || level >= 1) {
+    stop("level must be a finite scalar strictly between 0 and 1.",
+         call. = FALSE)
+  }
+  prediction <- predict_curve(
+    ibmfit, new_t = new_t, n_samples = n_samples, seed = seed
+  )
+  requested <- intersect(c("f", "fprime"), names(truth))
+  results <- lapply(requested, function(name) {
+    truth_values <- .evaluate_curve_truth(truth[[name]], prediction$t, name)
+    .curve_performance(
+      prediction[[name]], truth_values, prediction$t, level, name
+    )
+  })
+  aggregate <- do.call(rbind, lapply(results, `[[`, "aggregate"))
+  rownames(aggregate) <- NULL
+  if (!isTRUE(pointwise)) return(aggregate)
+  pointwise_result <- do.call(rbind, lapply(results, `[[`, "pointwise"))
+  rownames(pointwise_result) <- NULL
+  list(aggregate = aggregate, pointwise = pointwise_result)
 }
 
 #' Extract posterior hyperparameter samples

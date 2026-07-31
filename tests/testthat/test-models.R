@@ -123,6 +123,50 @@ test_that("reference-process global priors are calibrated correctly", {
   )
 })
 
+test_that("curve summaries expose function and derivative symmetrically", {
+  expect_true(all(c("param", "new_t", "seed") %in%
+                    names(formals(get_curve_summary))))
+  expect_true(all(c("param", "new_t", "seed") %in%
+                    names(formals(get_curve_samples))))
+  expect_identical(
+    eval(formals(get_curve_summary)$param),
+    c("both", "f", "fprime")
+  )
+})
+
+test_that("performance metrics are correct for posterior draws", {
+  draws <- cbind(c(0, 2), c(2, 4))
+  result <- ibmsmooth:::.curve_performance(
+    draws = draws, truth = c(1, 3), t = c(0, 1),
+    level = 0.5, parameter = "fprime"
+  )
+  expect_identical(result$aggregate$parameter, "fprime")
+  expect_equal(result$aggregate$MAD, 0)
+  expect_equal(result$aggregate$MCIW, 1)
+  expect_equal(result$aggregate$Coverage, 100)
+  expect_equal(result$aggregate$CRPS, 0.5)
+  expect_true(all(result$pointwise$covered))
+})
+
+test_that("truth functions and performance inputs are validated", {
+  expect_equal(
+    ibmsmooth:::.evaluate_curve_truth(function(t) t^2, 1:3, "f"),
+    c(1, 4, 9)
+  )
+  expect_error(
+    ibmsmooth:::.evaluate_curve_truth(1:2, 1:3, "fprime"),
+    "truth\\$fprime"
+  )
+  expect_error(
+    summarize_performance(NULL, list(f = 1), level = 1),
+    "strictly between"
+  )
+  expect_error(
+    summarize_performance(NULL, list(other = 1)),
+    "containing f and/or fprime"
+  )
+})
+
 test_that("all Stan models can omit the likelihood for prior sampling", {
   for (adaptive in c(FALSE, TRUE)) {
     for (parameterization in c("noncentered", "centered")) {

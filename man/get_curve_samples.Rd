@@ -8,7 +8,9 @@ get_curve_samples(
   ibmfit,
   param = c("f", "fprime", "both"),
   n_samples = 1000,
-  format = c("matrix", "long")
+  format = c("matrix", "long"),
+  new_t = NULL,
+  seed = NULL
 )
 }
 \arguments{
@@ -19,6 +21,10 @@ get_curve_samples(
 \item{n_samples}{Maximum number of draws.}
 
 \item{format}{Either \code{"matrix"} or \code{"long"}.}
+
+\item{new_t}{Optional finite locations at which to extract either curve.}
+
+\item{seed}{Optional seed for conditional bridge draws at new locations.}
 }
 \value{
 A matrix, list of matrices, or long data frame.

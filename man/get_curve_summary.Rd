@@ -4,7 +4,14 @@
 \alias{get_curve_summary}
 \title{Summarize posterior curves}
 \usage{
-get_curve_summary(ibmfit, n_samples = 1000, probs = c(0.025, 0.5, 0.975))
+get_curve_summary(
+  ibmfit,
+  n_samples = 1000,
+  probs = c(0.025, 0.5, 0.975),
+  param = c("both", "f", "fprime"),
+  new_t = NULL,
+  seed = NULL
+)
 }
 \arguments{
 \item{ibmfit}{An \code{ibmfit} object.}
@@ -12,6 +19,12 @@ get_curve_summary(ibmfit, n_samples = 1000, probs = c(0.025, 0.5, 0.975))
 \item{n_samples}{Maximum number of draws.}
 
 \item{probs}{Posterior probabilities.}
+
+\item{param}{One of \code{"f"}, \code{"fprime"}, or \code{"both"}.}
+
+\item{new_t}{Optional finite locations at which to summarize either curve.}
+
+\item{seed}{Optional seed for conditional bridge draws at new locations.}
 }
 \value{
 A data frame with pointwise summaries.

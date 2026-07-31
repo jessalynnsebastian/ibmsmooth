@@ -91,6 +91,22 @@ diagnostics <- get_diagnostics(fit_adaptive)
 diagnostics$overview
 ```
 
+When the truth is known, such as in a simulation study, function and
+derivative performance use the same interface:
+
+```r
+summarize_performance(
+  fit_adaptive,
+  truth = list(f = truth_f, fprime = truth_fprime),
+  new_t = evaluation_grid,
+  level = 0.95
+)
+```
+
+This reports mean absolute deviation of the posterior median (MAD), mean
+credible interval width (MCIW), coverage percentage, and empirical CRPS.
+Truth entries may instead be functions of `t`.
+
 The data are standardized internally, so custom smoothing priors are specified
 on the standardized model scale. Extraction functions transform posterior
 draws back to the original response and time scales. Locations supplied through
