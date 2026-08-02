@@ -18,8 +18,9 @@ plot_prior_posterior(
 \item{prior_fit}{Optional prior-only fit from \code{\link[=sample_prior]{sample_prior()}}. When omitted,
 a prior fit is sampled automatically.}
 
-\item{parameters}{Hyperparameters to display. The default shows \code{sigma} and
-the model's global smoothing scale (\code{tau} or \code{gamma}).}
+\item{parameters}{Hyperparameters to display. The default shows an
+observation scale/shape parameter when present and the model's global
+smoothing scale (\code{tau} or \code{gamma}).}
 
 \item{n_samples}{Maximum draws from each distribution.}
 

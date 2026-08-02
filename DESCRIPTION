@@ -4,9 +4,10 @@ Title: Integrated Brownian Motion Smoothing
 Version: 0.0.0.9000
 Authors@R: person(given = "Jessalyn", family = "Sebastian", email = "jessalys@uci.edu", role = c("aut", "cre"))
 Description: Fits ordinary and horseshoe locally adaptive integrated Brownian
-    motion smoothers for Gaussian observations using exact continuous-time
-    state transitions in Stan. Ordinary smoothing accepts a user-supplied Stan
-    prior for its positive smoothing parameter.
+    motion smoothers for continuous, binary, binomial, count, and positive
+    observations using exact continuous-time state transitions in Stan.
+    Ordinary smoothing accepts a user-supplied Stan prior for its positive
+    smoothing parameter.
 License: MIT + file LICENSE
 URL: https://jessalynnsebastian.github.io/ibmsmooth/,
     https://github.com/jessalynnsebastian/ibmsmooth

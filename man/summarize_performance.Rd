@@ -18,7 +18,8 @@ summarize_performance(
 \item{ibmfit}{An \code{ibmfit} object.}
 
 \item{truth}{Named list containing \code{f} and/or \code{fprime}. Each element can be a
-numeric vector evaluated at \code{new_t} or a function that accepts \code{new_t}.}
+numeric vector evaluated at \code{new_t} or a function that accepts \code{new_t}.
+For non-Gaussian families these are truths on the latent predictor scale.}
 
 \item{new_t}{Optional finite evaluation locations. By default, uses the
 fitted prediction grid.}

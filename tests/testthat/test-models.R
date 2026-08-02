@@ -97,12 +97,67 @@ test_that("adaptive Stan model matches the chapter hierarchy", {
   expect_false(grepl("operational", code, ignore.case = TRUE))
 })
 
+test_that("common conditionally independent likelihoods generate Stan code", {
+  expected <- c(
+    gaussian = "~ normal", student_t = "~ student_t",
+    bernoulli = "~ bernoulli_logit", binomial = "~ binomial_logit",
+    poisson = "~ poisson_log", negative_binomial = "~ neg_binomial_2_log",
+    lognormal = "~ lognormal", gamma = "~ gamma", beta = "~ beta",
+    exponential = "~ exponential"
+  )
+  for (family in names(expected)) {
+    for (adaptive in c(FALSE, TRUE)) {
+      code <- ibm(family = family, adaptive = adaptive, get_code = TRUE)
+      expect_match(code, expected[[family]], fixed = TRUE)
+      expect_false(grepl("OBSERVATION_", code, fixed = TRUE))
+    }
+  }
+})
+
+test_that("Stan programs can be returned, printed, and saved without data", {
+  code <- ibm(family = "poisson", get_code = TRUE)
+  expect_match(code, "poisson_log", fixed = TRUE)
+  printed <- capture.output(
+    invisible(ibm(family = "bernoulli", print_code = TRUE))
+  )
+  expect_true(any(grepl("bernoulli_logit", printed, fixed = TRUE)))
+  path <- tempfile(fileext = ".stan")
+  invisible(ibm(family = "negative_binomial", stan_file = path))
+  expect_true(file.exists(path))
+  expect_match(paste(readLines(path), collapse = "\n"),
+               "neg_binomial_2_log", fixed = TRUE)
+})
+
+test_that("family-specific observation inputs are validated", {
+  expect_error(
+    ibm(1:3, c(0, 2, 1), family = "bernoulli"),
+    "zero or one"
+  )
+  expect_error(
+    ibm(1:3, c(0, 1.5, 2), family = "poisson"),
+    "nonnegative integers"
+  )
+  expect_error(
+    ibm(1:3, c(0, 1, 2), family = "binomial"),
+    "trials"
+  )
+  expect_error(
+    ibm(1:3, c(0, 0.5, 1), family = "beta"),
+    "strictly between"
+  )
+  expect_error(
+    ibm(1:3, c(1, 2, 3), family = "poisson", exposure = c(1, 0, 1)),
+    "exposure"
+  )
+})
+
 test_that("reference-process global priors are calibrated correctly", {
   grid <- c(0, 0.1, 0.4, 1)
   reference_sd <- ibmsmooth:::.ibm_reference_sd(grid)
+  expect_equal(reference_sd, 1 / sqrt(3))
   expect_equal(
-    reference_sd,
-    exp(mean(log(sqrt(grid[-1]^3 / 3))))
+    ibmsmooth:::.ibm_reference_sd(c(0, 0.99, 1)),
+    reference_sd
   )
 
   upper <- 1.2
@@ -178,6 +233,18 @@ test_that("all Stan models can omit the likelihood for prior sampling", {
       expect_match(code, "if (!prior_only)", fixed = TRUE)
     }
   }
+})
+
+test_that("prior refits do not forward derived calibration fields", {
+  spec <- list(
+    t = 1:3, y = c(0, 1, 0), adaptive = TRUE,
+    global_scale = 99, reference_sd = 1 / sqrt(3)
+  )
+  replayed <- spec[intersect(
+    names(spec), names(formals(ibmsmooth:::.ibm_fit))
+  )]
+  expect_true(all(c("t", "y", "adaptive") %in% names(replayed)))
+  expect_false(any(c("global_scale", "reference_sd") %in% names(replayed)))
 })
 
 test_that("analytic Cholesky factor gives lambda Q(delta)", {

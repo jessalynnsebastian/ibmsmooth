@@ -3,9 +3,7 @@ data {
   int<lower=2> T;
   array[N_obs] int<lower=1, upper=T> obs_time_idx;
   vector<lower=0>[T - 1] deltat;
-  vector[N_obs] y_obs;
-  real log_sigma_mu;
-  real<lower=0> log_sigma_sd;
+  // OBSERVATION_DATA
   real<lower=0> global_scale;
   int<lower=1, upper=2> global_prior;
   real<lower=0> initial_sd;
@@ -16,14 +14,14 @@ transformed data {
   vector[T - 1] deltat_3_2 = deltat .* sqrt_deltat;
 }
 parameters {
-  real log_sigma_raw;
+  // OBSERVATION_PARAMETERS
   real<lower=0, upper=1> gamma_unif;
   vector<lower=0, upper=1>[T - 1] xi_unif;
   vector[2] z_initial;
   array[T - 1] vector[2] z_transition;
 }
 transformed parameters {
-  real<lower=0> sigma = exp(log_sigma_mu + log_sigma_sd * log_sigma_raw);
+  // OBSERVATION_TRANSFORMED_PARAMETERS
   real<lower=0> gamma = global_prior == 1
     ? global_scale * tan(0.5 * pi() * gamma_unif)
     : global_scale * inv_Phi(0.5 + 0.5 * gamma_unif);
@@ -45,13 +43,14 @@ transformed parameters {
   }
 }
 model {
-  log_sigma_raw ~ std_normal();
+  // OBSERVATION_PRIORS
   gamma_unif ~ uniform(0, 1);
   xi_unif ~ uniform(0, 1);
   z_initial ~ std_normal();
   for (i in 1:(T - 1)) z_transition[i] ~ std_normal();
-  if (!prior_only)
-    y_obs ~ normal(f[obs_time_idx], sigma);
+  if (!prior_only) {
+    // OBSERVATION_LIKELIHOOD
+  }
 }
 generated quantities {
   vector<lower=0>[T - 1] lambda_interval = square(gamma * xi);

@@ -17,6 +17,9 @@ sample_prior <- function(ibmfit, iter = 1000, chains = 2,
     stop("This fit predates stored model specifications; refit it first.",
          call. = FALSE)
   }
+  # fit_spec also retains derived quantities for reporting. Only arguments
+  # explicitly accepted by .ibm_fit should be replayed when sampling the prior.
+  spec <- spec[intersect(names(spec), names(formals(.ibm_fit)))]
   do.call(
     .ibm_fit,
     c(spec, list(
@@ -31,8 +34,9 @@ sample_prior <- function(ibmfit, iter = 1000, chains = 2,
 #' @param ibmfit A posterior `ibmfit`.
 #' @param prior_fit Optional prior-only fit from [sample_prior()]. When omitted,
 #'   a prior fit is sampled automatically.
-#' @param parameters Hyperparameters to display. The default shows `sigma` and
-#'   the model's global smoothing scale (`tau` or `gamma`).
+#' @param parameters Hyperparameters to display. The default shows an
+#'   observation scale/shape parameter when present and the model's global
+#'   smoothing scale (`tau` or `gamma`).
 #' @param n_samples Maximum draws from each distribution.
 #' @param ... Arguments passed to [sample_prior()] when `prior_fit` is omitted.
 #' @return A faceted ggplot object.
@@ -46,7 +50,19 @@ plot_prior_posterior <- function(ibmfit, prior_fit = NULL, parameters = NULL,
     warning("prior_fit is not marked as a prior-only fit.", call. = FALSE)
   }
   if (is.null(parameters)) {
-    parameters <- c("sigma", if (isTRUE(ibmfit$adaptive)) "gamma" else "tau")
+    family <- ibmfit$family
+    if (is.null(family)) family <- "gaussian"
+    observation_parameter <- if (family %in%
+                                  c("gaussian", "student_t", "lognormal")) {
+      "sigma"
+    } else if (family %in%
+               c("negative_binomial", "gamma", "beta")) {
+      "phi"
+    } else character()
+    parameters <- c(
+      observation_parameter,
+      if (isTRUE(ibmfit$adaptive)) "gamma" else "tau"
+    )
   }
   if (!is.character(parameters) || !length(parameters)) {
     stop("parameters must be a non-empty character vector.", call. = FALSE)
@@ -96,14 +112,66 @@ posterior_predict <- function(ibmfit, n_samples = 500, seed = NULL) {
   }
   n_samples <- as.integer(n_samples)
   f <- get_samples(ibmfit, "f", n_samples)
-  sigma <- get_samples(ibmfit, "sigma", n_samples)[, 1L]
   n_samples <- nrow(f)
   mu <- f[, ibmfit$data$obs_time_idx, drop = FALSE]
   if (!is.null(seed)) set.seed(seed)
-  mu + matrix(
-    stats::rnorm(length(mu), sd = rep(sigma, ncol(mu))),
-    nrow = n_samples
+  family <- ibmfit$family
+  if (is.null(family)) family <- "gaussian"
+  if (family %in% c("gaussian", "student_t", "lognormal")) {
+    sigma <- get_samples(ibmfit, "sigma", n_samples)[, 1L]
+  }
+  if (family %in% c("negative_binomial", "gamma", "beta")) {
+    phi <- get_samples(ibmfit, "phi", n_samples)[, 1L]
+  }
+  result <- switch(
+    family,
+    gaussian = mu + matrix(
+      stats::rnorm(length(mu), sd = rep(sigma, ncol(mu))), nrow = n_samples
+    ),
+    student_t = mu + matrix(
+      stats::rt(length(mu), df = ibmfit$fit_spec$student_df) *
+        rep(sigma, ncol(mu)), nrow = n_samples
+    ),
+    bernoulli = matrix(
+      stats::rbinom(length(mu), 1, stats::plogis(mu)), nrow = n_samples
+    ),
+    binomial = {
+      trials <- matrix(ibmfit$fit_spec$trials, nrow = n_samples,
+                       ncol = ncol(mu), byrow = TRUE)
+      matrix(stats::rbinom(length(mu), trials, stats::plogis(mu)),
+             nrow = n_samples)
+    },
+    poisson = {
+      exposure <- matrix(ibmfit$fit_spec$exposure, nrow = n_samples,
+                         ncol = ncol(mu), byrow = TRUE)
+      matrix(stats::rpois(length(mu), exp(mu) * exposure), nrow = n_samples)
+    },
+    negative_binomial = {
+      exposure <- matrix(ibmfit$fit_spec$exposure, nrow = n_samples,
+                         ncol = ncol(mu), byrow = TRUE)
+      matrix(stats::rnbinom(length(mu), size = rep(phi, ncol(mu)),
+                            mu = exp(mu) * exposure), nrow = n_samples)
+    },
+    lognormal = matrix(
+      stats::rlnorm(length(mu), meanlog = mu,
+                    sdlog = rep(sigma, ncol(mu))), nrow = n_samples
+    ),
+    gamma = matrix(
+      stats::rgamma(length(mu), shape = rep(phi, ncol(mu)),
+                    rate = rep(phi, ncol(mu)) / exp(mu)), nrow = n_samples
+    ),
+    beta = {
+      mean_response <- stats::plogis(mu)
+      matrix(stats::rbeta(length(mu),
+                          mean_response * rep(phi, ncol(mu)),
+                          (1 - mean_response) * rep(phi, ncol(mu))),
+             nrow = n_samples)
+    },
+    exponential = matrix(
+      stats::rexp(length(mu), rate = exp(-mu)), nrow = n_samples
+    )
   )
+  result
 }
 
 #' Visual posterior predictive check

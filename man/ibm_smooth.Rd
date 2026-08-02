@@ -9,6 +9,11 @@ ibm_smooth(
   y = NULL,
   infer_at = NULL,
   adaptive = FALSE,
+  family = c("gaussian", "student_t", "bernoulli", "binomial", "poisson",
+    "negative_binomial", "lognormal", "gamma", "beta", "exponential"),
+  trials = NULL,
+  exposure = 1,
+  student_df = 4,
   parameterization = c("noncentered", "centered"),
   smoothing_prior = "tau ~ lognormal(-2, 0.5);",
   global_prior = c("half_cauchy", "half_normal"),
@@ -19,6 +24,7 @@ ibm_smooth(
   slab_df = 4,
   regularized_retry = c("ask", "never"),
   log_sigma = list(mu = -1, sd = 1),
+  log_phi = list(mu = 0, sd = 1),
   initial_sd = 5,
   iter = 2000,
   chains = 4,
@@ -27,6 +33,8 @@ ibm_smooth(
   max_treedepth = 12,
   adapt_delta = 0.9,
   get_code = FALSE,
+  print_code = FALSE,
+  stan_file = NULL,
   ...
 )
 }
@@ -39,6 +47,18 @@ ibm_smooth(
 after sampling. These locations do not enlarge the Stan latent state.}
 
 \item{adaptive}{Logical; use locally adaptive IBM when \code{TRUE}.}
+
+\item{family}{Conditionally independent observation family. Available
+families are \code{"gaussian"}, \code{"student_t"}, \code{"bernoulli"}, \code{"binomial"},
+\code{"poisson"}, \code{"negative_binomial"}, \code{"lognormal"}, \code{"gamma"}, \code{"beta"},
+and \code{"exponential"}.}
+
+\item{trials}{Binomial trial counts. Required for \code{family = "binomial"}.}
+
+\item{exposure}{Positive observation exposures for Poisson and negative
+binomial models. A scalar is recycled. The default is one.}
+
+\item{student_df}{Positive degrees of freedom for the Student-t likelihood.}
 
 \item{parameterization}{Either \code{"noncentered"} (the default) or
 \code{"centered"}. Both define the same IBM model with different HMC
@@ -53,7 +73,9 @@ only when \code{adaptive = FALSE}.}
 either \code{"half_cauchy"} or \code{"half_normal"}.}
 
 \item{global_upper}{Positive upper bound \code{U} used to calibrate the global
-prior through \code{Pr(gamma * sigma_ref > U) = global_alpha}.}
+prior through \code{Pr(gamma / sqrt(3) > U) = global_alpha}. It is in
+standardized-response units for Gaussian and Student-t models and latent
+predictor units otherwise.}
 
 \item{global_alpha}{Tail probability used in the global-prior calibration.}
 
@@ -61,7 +83,7 @@ prior through \code{Pr(gamma * sigma_ref > U) = global_alpha}.}
 default; \code{"regularized_horseshoe"} adds a finite Student-t slab.}
 
 \item{slab_scale}{Positive slab scale for the regularized horseshoe, on the
-internally standardized derivative-diffusion scale.}
+internal latent derivative-diffusion scale.}
 
 \item{slab_df}{Positive slab degrees of freedom. The default is 4.}
 
@@ -71,10 +93,13 @@ to rerun the same model and HMC settings with a regularized horseshoe.
 Non-interactive sessions never start a refit automatically.}
 
 \item{log_sigma}{List with \code{mu} and positive \code{sd} for the log observation
-standard deviation on the internally standardized response scale.}
+standard deviation for Gaussian, Student-t, and lognormal likelihoods.}
+
+\item{log_phi}{List with \code{mu} and positive \code{sd} for log \code{phi}: the negative
+binomial shape, gamma shape, or beta precision parameter.}
 
 \item{initial_sd}{Positive prior standard deviation for the initial function
-value and derivative on the internally standardized scale.}
+value and derivative on the internal latent scale.}
 
 \item{iter, chains, cores}{Stan sampling controls.}
 
@@ -83,6 +108,12 @@ value and derivative on the internally standardized scale.}
 \item{max_treedepth, adapt_delta}{Stan HMC controls.}
 
 \item{get_code}{If \code{TRUE}, return the selected Stan program rather than fit.}
+
+\item{print_code}{If \code{TRUE}, print the selected Stan program. This works
+without supplying \code{t} or \code{y}.}
+
+\item{stan_file}{Optional path at which to save the selected Stan program.
+This also works without supplying data.}
 
 \item{...}{Additional arguments passed to \code{\link[rstan:stan]{rstan::stan()}}.}
 }

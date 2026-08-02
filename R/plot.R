@@ -13,11 +13,16 @@ plot.ibmfit <- function(x, truth = NULL, ...) {
   curves <- predict_curve(
     x, new_t = prediction_grid
   )
+  family <- x$family
+  if (is.null(family)) family <- "gaussian"
+  observed_data <- if (family %in% c("gaussian", "student_t")) {
+    data.frame(t = x$data$t_raw, y = x$data$y_raw)
+  } else NULL
   plot_curve(
     t_unique = curves$t,
     f_samples = curves$f,
     fprime_samples = curves$fprime,
-    dat_orig = data.frame(t = x$data$t_raw, y = x$data$y_raw),
+    dat_orig = observed_data,
     truth = truth,
     ...
   )

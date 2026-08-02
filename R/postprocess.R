@@ -19,7 +19,7 @@
 #'
 #' @param ibmfit An `ibmfit` object.
 #' @param param Stan parameter name. Common choices are `"f"`, `"fprime"`,
-#'   `"sigma"`, `"tau"`, `"gamma"`, `"xi"`, `"xi_regularized"`, `"slab"`,
+#'   `"sigma"`, `"phi"`, `"tau"`, `"gamma"`, `"xi"`, `"xi_regularized"`, `"slab"`,
 #'   and `"lambda_interval"`.
 #' @param n_samples Maximum number of draws; `NULL` keeps all draws.
 #' @return A matrix with posterior draws in rows.
@@ -28,7 +28,7 @@ get_samples <- function(ibmfit, param = c("f", "fprime"),
                         n_samples = NULL) {
   param <- match.arg(
     param,
-    c("f", "fprime", "sigma", "tau", "gamma", "xi",
+    c("f", "fprime", "sigma", "phi", "tau", "gamma", "xi",
       "xi_regularized", "slab", "tau_interval", "lambda_interval")
   )
   draws <- .stan_draws(ibmfit, param, n_samples)
@@ -175,6 +175,7 @@ get_curve_summary <- function(ibmfit, n_samples = 1000,
 #' @param ibmfit An `ibmfit` object.
 #' @param truth Named list containing `f` and/or `fprime`. Each element can be a
 #'   numeric vector evaluated at `new_t` or a function that accepts `new_t`.
+#'   For non-Gaussian families these are truths on the latent predictor scale.
 #' @param new_t Optional finite evaluation locations. By default, uses the
 #'   fitted prediction grid.
 #' @param level Credible interval confidence level strictly between zero and
@@ -231,7 +232,17 @@ summarize_performance <- function(ibmfit, truth, new_t = NULL, level = 0.95,
 get_hyperparameter_samples <- function(ibmfit, n_samples = 1000,
                                        format = c("long", "wide")) {
   format <- match.arg(format)
-  names <- c("sigma", if (isTRUE(ibmfit$adaptive)) "gamma" else "tau")
+  family <- ibmfit$family
+  if (is.null(family)) family <- "gaussian"
+  observation_parameter <- if (family %in%
+                                c("gaussian", "student_t", "lognormal")) {
+    "sigma"
+  } else if (family %in%
+             c("negative_binomial", "gamma", "beta")) {
+    "phi"
+  } else character()
+  names <- c(observation_parameter,
+             if (isTRUE(ibmfit$adaptive)) "gamma" else "tau")
   if (isTRUE(ibmfit$adaptive) &&
       identical(ibmfit$adaptive_prior, "regularized_horseshoe")) {
     names <- c(names, "slab")

@@ -1,7 +1,7 @@
 # ibmsmooth
 
-`ibmsmooth` fits integrated Brownian motion smoothers for Gaussian observations
-using Stan. The package intentionally contains two models:
+`ibmsmooth` fits integrated Brownian motion smoothers for conditionally
+independent observations using Stan. The package contains two latent models:
 
 - ordinary IBM with one positive smoothing parameter and a user-supplied Stan
   prior for that parameter; and
@@ -26,7 +26,12 @@ N_2\left[
 Ordinary IBM sets \(\lambda_j=\tau^2\). The adaptive model sets
 \(\lambda_j=\gamma^2\xi_j^2\), with
 \(\xi_j\sim\mathrm{C}^+(0,1)\) and
-\(\gamma\) has a reference-process-calibrated half-Cauchy or half-normal prior.
+reference-process-calibrated half-Cauchy or half-normal prior on \(\gamma\).
+
+After mapping time to \([0,1]\), `global_upper = U` and
+`global_alpha = alpha` set the prior scale through
+\(\Pr\{\gamma/\sqrt{3}>U\}=\alpha\). This uses the maximum reference-process
+standard deviation and is independent of the observation grid.
 
 ## Installation
 
@@ -91,6 +96,34 @@ diagnostics <- get_diagnostics(fit_adaptive)
 diagnostics$overview
 ```
 
+## Observation families
+
+Use `family` to select a likelihood. Available families are `"gaussian"`,
+`"student_t"`, `"bernoulli"`, `"binomial"`, `"poisson"`,
+`"negative_binomial"`, `"lognormal"`, `"gamma"`, `"beta"`, and
+`"exponential"`.
+
+```r
+fit_counts <- ibm(t, counts, adaptive = TRUE, family = "poisson",
+                  exposure = person_time)
+fit_binary <- ibm(t, events, family = "binomial", trials = sample_sizes)
+```
+
+Gaussian and Student-t responses are standardized internally and `f` is
+returned on the original response scale. For other families, `f` is the latent
+predictor: logit scale for Bernoulli, binomial, and beta means, and log-mean
+scale for Poisson, negative-binomial, gamma, and exponential observations.
+For lognormal observations, `f` is the mean on the log scale. Consequently,
+`global_upper` is interpreted on the latent-predictor scale for these families.
+
+The generated Stan program can be used without supplying data:
+
+```r
+code <- ibm(family = "poisson", adaptive = TRUE, get_code = TRUE)
+ibm(family = "poisson", adaptive = TRUE, print_code = TRUE)
+ibm(family = "poisson", adaptive = TRUE, stan_file = "ibm_poisson.stan")
+```
+
 When the truth is known, such as in a simulation study, function and
 derivative performance use the same interface:
 
@@ -107,9 +140,11 @@ This reports mean absolute deviation of the posterior median (MAD), mean
 credible interval width (MCIW), coverage percentage, and empirical CRPS.
 Truth entries may instead be functions of `t`.
 
-The data are standardized internally, so custom smoothing priors are specified
-on the standardized model scale. Extraction functions transform posterior
-draws back to the original response and time scales. Locations supplied through
+Time is standardized internally. Gaussian and Student-t responses are also
+standardized, while other families retain their latent link scale. Custom
+smoothing priors are specified on that internal model scale. Extraction
+functions transform applicable posterior draws back to the original response
+and time scales. Locations supplied through
 `infer_at` are not added to the Stan state vector; `predict_curve()` samples
 them afterward using exact conditional IBM bridges.
 
@@ -122,8 +157,8 @@ coordinates.
 
 The adaptive default remains `adaptive_prior = "horseshoe"`. The optional
 regularized horseshoe retains shrinkage near zero but caps the effective local
-diffusion scale with a Student-t slab. `slab_scale` is specified on the
-internally standardized derivative-diffusion scale.
+diffusion scale with a Student-t slab. `slab_scale` is specified on the internal
+latent derivative-diffusion scale.
 
 The post-fit recommendation can also be inspected directly:
 
