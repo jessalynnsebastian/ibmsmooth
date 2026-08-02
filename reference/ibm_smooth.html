@@ -51,16 +51,32 @@ lower-level fitting name.</p>
 <span>  y <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  infer_at <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  adaptive <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  family <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"gaussian"</span>, <span class="st">"student_t"</span>, <span class="st">"bernoulli"</span>, <span class="st">"binomial"</span>, <span class="st">"poisson"</span>,</span>
+<span>    <span class="st">"negative_binomial"</span>, <span class="st">"lognormal"</span>, <span class="st">"gamma"</span>, <span class="st">"beta"</span>, <span class="st">"exponential"</span><span class="op">)</span>,</span>
+<span>  trials <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  exposure <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  student_df <span class="op">=</span> <span class="fl">4</span>,</span>
+<span>  parameterization <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"noncentered"</span>, <span class="st">"centered"</span><span class="op">)</span>,</span>
 <span>  smoothing_prior <span class="op">=</span> <span class="st">"tau ~ lognormal(-2, 0.5);"</span>,</span>
-<span>  global_scale <span class="op">=</span> <span class="fl">0.1</span>,</span>
+<span>  global_prior <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"half_cauchy"</span>, <span class="st">"half_normal"</span><span class="op">)</span>,</span>
+<span>  global_upper <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  global_alpha <span class="op">=</span> <span class="fl">0.05</span>,</span>
+<span>  adaptive_prior <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"horseshoe"</span>, <span class="st">"regularized_horseshoe"</span><span class="op">)</span>,</span>
+<span>  slab_scale <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  slab_df <span class="op">=</span> <span class="fl">4</span>,</span>
+<span>  regularized_retry <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"ask"</span>, <span class="st">"never"</span><span class="op">)</span>,</span>
 <span>  log_sigma <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>mu <span class="op">=</span> <span class="op">-</span><span class="fl">1</span>, sd <span class="op">=</span> <span class="fl">1</span><span class="op">)</span>,</span>
+<span>  log_phi <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>mu <span class="op">=</span> <span class="fl">0</span>, sd <span class="op">=</span> <span class="fl">1</span><span class="op">)</span>,</span>
 <span>  initial_sd <span class="op">=</span> <span class="fl">5</span>,</span>
 <span>  iter <span class="op">=</span> <span class="fl">2000</span>,</span>
 <span>  chains <span class="op">=</span> <span class="fl">4</span>,</span>
 <span>  cores <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">getOption</a></span><span class="op">(</span><span class="st">"mc.cores"</span>, <span class="va">chains</span><span class="op">)</span>,</span>
+<span>  init <span class="op">=</span> <span class="st">"random"</span>,</span>
 <span>  max_treedepth <span class="op">=</span> <span class="fl">12</span>,</span>
 <span>  adapt_delta <span class="op">=</span> <span class="fl">0.9</span>,</span>
 <span>  get_code <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  print_code <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  stan_file <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -78,11 +94,38 @@ lower-level fitting name.</p>
 
 
 <dt id="arg-infer-at">infer_at<a class="anchor" aria-label="anchor" href="#arg-infer-at"></a></dt>
-<dd><p>Optional additional locations at which to infer the state.</p></dd>
+<dd><p>Optional additional locations at which to predict the state
+after sampling. These locations do not enlarge the Stan latent state.</p></dd>
 
 
 <dt id="arg-adaptive">adaptive<a class="anchor" aria-label="anchor" href="#arg-adaptive"></a></dt>
 <dd><p>Logical; use locally adaptive IBM when <code>TRUE</code>.</p></dd>
+
+
+<dt id="arg-family">family<a class="anchor" aria-label="anchor" href="#arg-family"></a></dt>
+<dd><p>Conditionally independent observation family. Available
+families are <code>"gaussian"</code>, <code>"student_t"</code>, <code>"bernoulli"</code>, <code>"binomial"</code>,
+<code>"poisson"</code>, <code>"negative_binomial"</code>, <code>"lognormal"</code>, <code>"gamma"</code>, <code>"beta"</code>,
+and <code>"exponential"</code>.</p></dd>
+
+
+<dt id="arg-trials">trials<a class="anchor" aria-label="anchor" href="#arg-trials"></a></dt>
+<dd><p>Binomial trial counts. Required for <code>family = "binomial"</code>.</p></dd>
+
+
+<dt id="arg-exposure">exposure<a class="anchor" aria-label="anchor" href="#arg-exposure"></a></dt>
+<dd><p>Positive observation exposures for Poisson and negative
+binomial models. A scalar is recycled. The default is one.</p></dd>
+
+
+<dt id="arg-student-df">student_df<a class="anchor" aria-label="anchor" href="#arg-student-df"></a></dt>
+<dd><p>Positive degrees of freedom for the Student-t likelihood.</p></dd>
+
+
+<dt id="arg-parameterization">parameterization<a class="anchor" aria-label="anchor" href="#arg-parameterization"></a></dt>
+<dd><p>Either <code>"noncentered"</code> (the default) or
+<code>"centered"</code>. Both define the same IBM model with different HMC
+coordinates.</p></dd>
 
 
 <dt id="arg-smoothing-prior">smoothing_prior<a class="anchor" aria-label="anchor" href="#arg-smoothing-prior"></a></dt>
@@ -92,23 +135,64 @@ prior on the positive ordinary-IBM smoothing parameter <code>tau</code>. For exa
 only when <code>adaptive = FALSE</code>.</p></dd>
 
 
-<dt id="arg-global-scale">global_scale<a class="anchor" aria-label="anchor" href="#arg-global-scale"></a></dt>
-<dd><p>Positive half-Cauchy scale for <code>gamma</code> in the adaptive
-global–local prior.</p></dd>
+<dt id="arg-global-prior">global_prior<a class="anchor" aria-label="anchor" href="#arg-global-prior"></a></dt>
+<dd><p>Prior family for the adaptive global scale <code>gamma</code>:
+either <code>"half_cauchy"</code> or <code>"half_normal"</code>.</p></dd>
+
+
+<dt id="arg-global-upper">global_upper<a class="anchor" aria-label="anchor" href="#arg-global-upper"></a></dt>
+<dd><p>Positive upper bound <code>U</code> used to calibrate the global
+prior through <code>Pr(gamma / sqrt(3) &gt; U) = global_alpha</code>. It is in
+standardized-response units for Gaussian and Student-t models and latent
+predictor units otherwise.</p></dd>
+
+
+<dt id="arg-global-alpha">global_alpha<a class="anchor" aria-label="anchor" href="#arg-global-alpha"></a></dt>
+<dd><p>Tail probability used in the global-prior calibration.</p></dd>
+
+
+<dt id="arg-adaptive-prior">adaptive_prior<a class="anchor" aria-label="anchor" href="#arg-adaptive-prior"></a></dt>
+<dd><p>Adaptive local-scale prior. <code>"horseshoe"</code> is the
+default; <code>"regularized_horseshoe"</code> adds a finite Student-t slab.</p></dd>
+
+
+<dt id="arg-slab-scale">slab_scale<a class="anchor" aria-label="anchor" href="#arg-slab-scale"></a></dt>
+<dd><p>Positive slab scale for the regularized horseshoe, on the
+internal latent derivative-diffusion scale.</p></dd>
+
+
+<dt id="arg-slab-df">slab_df<a class="anchor" aria-label="anchor" href="#arg-slab-df"></a></dt>
+<dd><p>Positive slab degrees of freedom. The default is 4.</p></dd>
+
+
+<dt id="arg-regularized-retry">regularized_retry<a class="anchor" aria-label="anchor" href="#arg-regularized-retry"></a></dt>
+<dd><p>Either <code>"ask"</code> (the default) or <code>"never"</code>.
+After a problematic interactive ordinary-horseshoe fit, <code>"ask"</code> offers
+to rerun the same model and HMC settings with a regularized horseshoe.
+Non-interactive sessions never start a refit automatically.</p></dd>
 
 
 <dt id="arg-log-sigma">log_sigma<a class="anchor" aria-label="anchor" href="#arg-log-sigma"></a></dt>
 <dd><p>List with <code>mu</code> and positive <code>sd</code> for the log observation
-standard deviation on the internally standardized response scale.</p></dd>
+standard deviation for Gaussian, Student-t, and lognormal likelihoods.</p></dd>
+
+
+<dt id="arg-log-phi">log_phi<a class="anchor" aria-label="anchor" href="#arg-log-phi"></a></dt>
+<dd><p>List with <code>mu</code> and positive <code>sd</code> for log <code>phi</code>: the negative
+binomial shape, gamma shape, or beta precision parameter.</p></dd>
 
 
 <dt id="arg-initial-sd">initial_sd<a class="anchor" aria-label="anchor" href="#arg-initial-sd"></a></dt>
 <dd><p>Positive prior standard deviation for the initial function
-value and derivative on the internally standardized scale.</p></dd>
+value and derivative on the internal latent scale.</p></dd>
 
 
 <dt id="arg-iter-chains-cores">iter, chains, cores<a class="anchor" aria-label="anchor" href="#arg-iter-chains-cores"></a></dt>
 <dd><p>Stan sampling controls.</p></dd>
+
+
+<dt id="arg-init">init<a class="anchor" aria-label="anchor" href="#arg-init"></a></dt>
+<dd><p>Initial values passed to <code><a href="https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html" class="external-link">rstan::sampling()</a></code>.</p></dd>
 
 
 <dt id="arg-max-treedepth-adapt-delta">max_treedepth, adapt_delta<a class="anchor" aria-label="anchor" href="#arg-max-treedepth-adapt-delta"></a></dt>
@@ -117,6 +201,16 @@ value and derivative on the internally standardized scale.</p></dd>
 
 <dt id="arg-get-code">get_code<a class="anchor" aria-label="anchor" href="#arg-get-code"></a></dt>
 <dd><p>If <code>TRUE</code>, return the selected Stan program rather than fit.</p></dd>
+
+
+<dt id="arg-print-code">print_code<a class="anchor" aria-label="anchor" href="#arg-print-code"></a></dt>
+<dd><p>If <code>TRUE</code>, print the selected Stan program. This works
+without supplying <code>t</code> or <code>y</code>.</p></dd>
+
+
+<dt id="arg-stan-file">stan_file<a class="anchor" aria-label="anchor" href="#arg-stan-file"></a></dt>
+<dd><p>Optional path at which to save the selected Stan program.
+This also works without supplying data.</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>

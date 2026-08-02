@@ -46,6 +46,45 @@ these examples induce their corresponding truncated (half)
 distributions. Priors are specified on the internally standardized
 response and time scale.
 
+## Observation models
+
+Observations are conditionally independent given the function. The
+`family` argument provides Gaussian, Student-t, Bernoulli, binomial,
+Poisson, negative-binomial, lognormal, gamma, beta, and exponential
+likelihoods. Binomial models use `trials`; Poisson and negative-binomial
+models optionally use `exposure`.
+
+``` r
+
+fit_poisson <- ibm(
+  t, counts, family = "poisson", exposure = person_time,
+  adaptive = TRUE
+)
+
+fit_binomial <- ibm(
+  t, events, family = "binomial", trials = sample_sizes,
+  adaptive = TRUE
+)
+```
+
+Gaussian and Student-t responses are standardized. For other families
+the IBM function is the latent predictor: logit scale for Bernoulli,
+binomial, and beta means; log-mean scale for Poisson, negative-binomial,
+gamma, and exponential observations; and mean-log scale for lognormal
+observations. Priors on `phi` for negative-binomial, gamma, and beta
+likelihoods are controlled by `log_phi`.
+
+The complete generated Stan program can be returned, printed, or saved
+without supplying observations:
+
+``` r
+
+code <- ibm(family = "poisson", adaptive = TRUE, get_code = TRUE)
+ibm(family = "poisson", adaptive = TRUE, print_code = TRUE)
+ibm(family = "poisson", adaptive = TRUE,
+    stan_file = "ibm_poisson.stan")
+```
+
 ## Locally adaptive IBM
 
 The adaptive model uses
@@ -62,12 +101,53 @@ innovations. The derivative remains a continuous Brownian path; each
 local scale controls how much its slope is permitted to evolve over an
 interval.
 
+Internally, locations are mapped to $`[0,1]`$. Gaussian and Student-t
+responses are standardized; other families use their latent predictor
+scale. With all local scales set to one, the stochastic departure from
+the initial linear trajectory has standard deviation
+$`t^{3/2}/3^{1/2}`$, whose maximum is $`1/3^{1/2}`$. The arguments
+`global_upper = U` and `global_alpha = alpha` therefore calibrate the
+selected half-Cauchy or half-normal prior so that
+
+``` math
+\Pr\{\gamma/\sqrt{3}>U\}=\alpha.
+```
+
+This calibration is independent of the number and placement of state
+locations.
+
 ``` r
 
 fit_adaptive <- ibm(
   t, y,
   adaptive = TRUE,
-  global_scale = 0.1,
+  global_prior = "half_cauchy",
+  global_upper = 1,
+  global_alpha = 0.05,
+  chains = 4,
+  iter = 2000,
+  adapt_delta = 0.99
+)
+
+# Same model in centered HMC coordinates
+fit_adaptive_centered <- ibm(
+  t, y,
+  adaptive = TRUE,
+  parameterization = "centered",
+  global_prior = "half_normal",
+  global_upper = 1,
+  global_alpha = 0.05,
+  chains = 4,
+  iter = 2000,
+  adapt_delta = 0.99
+)
+
+fit_adaptive_regularized <- ibm(
+  t, y,
+  adaptive = TRUE,
+  adaptive_prior = "regularized_horseshoe",
+  slab_scale = 1,
+  slab_df = 4,
   chains = 4,
   iter = 2000,
   adapt_delta = 0.99

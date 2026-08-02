@@ -7,8 +7,10 @@
 <url><loc>https://jessalynnsebastian.github.io/ibmsmooth/articles/simulating-ibm.html</loc></url>
 <url><loc>https://jessalynnsebastian.github.io/ibmsmooth/authors.html</loc></url>
 <url><loc>https://jessalynnsebastian.github.io/ibmsmooth/index.html</loc></url>
+<url><loc>https://jessalynnsebastian.github.io/ibmsmooth/reference/check_regularized_horseshoe.html</loc></url>
 <url><loc>https://jessalynnsebastian.github.io/ibmsmooth/reference/get_curve_samples.html</loc></url>
 <url><loc>https://jessalynnsebastian.github.io/ibmsmooth/reference/get_curve_summary.html</loc></url>
+<url><loc>https://jessalynnsebastian.github.io/ibmsmooth/reference/get_diagnostics.html</loc></url>
 <url><loc>https://jessalynnsebastian.github.io/ibmsmooth/reference/get_hyperparameter_samples.html</loc></url>
 <url><loc>https://jessalynnsebastian.github.io/ibmsmooth/reference/get_hyperparameter_summary.html</loc></url>
 <url><loc>https://jessalynnsebastian.github.io/ibmsmooth/reference/get_samples.html</loc></url>
@@ -19,8 +21,14 @@
 <url><loc>https://jessalynnsebastian.github.io/ibmsmooth/reference/plot.ibmfit.html</loc></url>
 <url><loc>https://jessalynnsebastian.github.io/ibmsmooth/reference/plot_curve.html</loc></url>
 <url><loc>https://jessalynnsebastian.github.io/ibmsmooth/reference/plot_diffusion.html</loc></url>
+<url><loc>https://jessalynnsebastian.github.io/ibmsmooth/reference/plot_pp_check.html</loc></url>
+<url><loc>https://jessalynnsebastian.github.io/ibmsmooth/reference/plot_prior_posterior.html</loc></url>
+<url><loc>https://jessalynnsebastian.github.io/ibmsmooth/reference/posterior_predict.html</loc></url>
+<url><loc>https://jessalynnsebastian.github.io/ibmsmooth/reference/predict_curve.html</loc></url>
 <url><loc>https://jessalynnsebastian.github.io/ibmsmooth/reference/print.summary_ibmfit.html</loc></url>
+<url><loc>https://jessalynnsebastian.github.io/ibmsmooth/reference/sample_prior.html</loc></url>
 <url><loc>https://jessalynnsebastian.github.io/ibmsmooth/reference/simulate_ibm.html</loc></url>
+<url><loc>https://jessalynnsebastian.github.io/ibmsmooth/reference/summarize_performance.html</loc></url>
 <url><loc>https://jessalynnsebastian.github.io/ibmsmooth/reference/summary.ibmfit.html</loc></url>
 </urlset>
 

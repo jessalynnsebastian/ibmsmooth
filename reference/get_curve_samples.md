@@ -9,7 +9,9 @@ get_curve_samples(
   ibmfit,
   param = c("f", "fprime", "both"),
   n_samples = 1000,
-  format = c("matrix", "long")
+  format = c("matrix", "long"),
+  new_t = NULL,
+  seed = NULL
 )
 ```
 
@@ -30,6 +32,14 @@ get_curve_samples(
 - format:
 
   Either `"matrix"` or `"long"`.
+
+- new_t:
+
+  Optional finite locations at which to extract either curve.
+
+- seed:
+
+  Optional seed for conditional bridge draws at new locations.
 
 ## Value
 

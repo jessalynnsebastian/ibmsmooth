@@ -47,7 +47,9 @@
 <span>  <span class="va">ibmfit</span>,</span>
 <span>  param <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"f"</span>, <span class="st">"fprime"</span>, <span class="st">"both"</span><span class="op">)</span>,</span>
 <span>  n_samples <span class="op">=</span> <span class="fl">1000</span>,</span>
-<span>  format <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"matrix"</span>, <span class="st">"long"</span><span class="op">)</span></span>
+<span>  format <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"matrix"</span>, <span class="st">"long"</span><span class="op">)</span>,</span>
+<span>  new_t <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  seed <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -69,6 +71,14 @@
 
 <dt id="arg-format">format<a class="anchor" aria-label="anchor" href="#arg-format"></a></dt>
 <dd><p>Either <code>"matrix"</code> or <code>"long"</code>.</p></dd>
+
+
+<dt id="arg-new-t">new_t<a class="anchor" aria-label="anchor" href="#arg-new-t"></a></dt>
+<dd><p>Optional finite locations at which to extract either curve.</p></dd>
+
+
+<dt id="arg-seed">seed<a class="anchor" aria-label="anchor" href="#arg-seed"></a></dt>
+<dd><p>Optional seed for conditional bridge draws at new locations.</p></dd>
 
 </dl></div>
     <div class="section level2">

@@ -115,6 +115,39 @@ distributions in these examples induce their corresponding truncated
 standardized response and time scale.</p>
 </div>
 <div class="section level2">
+<h2 id="observation-models">Observation models<a class="anchor" aria-label="anchor" href="#observation-models"></a>
+</h2>
+<p>Observations are conditionally independent given the function. The
+<code>family</code> argument provides Gaussian, Student-t, Bernoulli,
+binomial, Poisson, negative-binomial, lognormal, gamma, beta, and
+exponential likelihoods. Binomial models use <code>trials</code>;
+Poisson and negative-binomial models optionally use
+<code>exposure</code>.</p>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">fit_poisson</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ibm.html">ibm</a></span><span class="op">(</span></span>
+<span>  <span class="va">t</span>, <span class="va">counts</span>, family <span class="op">=</span> <span class="st">"poisson"</span>, exposure <span class="op">=</span> <span class="va">person_time</span>,</span>
+<span>  adaptive <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">fit_binomial</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ibm.html">ibm</a></span><span class="op">(</span></span>
+<span>  <span class="va">t</span>, <span class="va">events</span>, family <span class="op">=</span> <span class="st">"binomial"</span>, trials <span class="op">=</span> <span class="va">sample_sizes</span>,</span>
+<span>  adaptive <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p>Gaussian and Student-t responses are standardized. For other families
+the IBM function is the latent predictor: logit scale for Bernoulli,
+binomial, and beta means; log-mean scale for Poisson, negative-binomial,
+gamma, and exponential observations; and mean-log scale for lognormal
+observations. Priors on <code>phi</code> for negative-binomial, gamma,
+and beta likelihoods are controlled by <code>log_phi</code>.</p>
+<p>The complete generated Stan program can be returned, printed, or
+saved without supplying observations:</p>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">code</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ibm.html">ibm</a></span><span class="op">(</span>family <span class="op">=</span> <span class="st">"poisson"</span>, adaptive <span class="op">=</span> <span class="cn">TRUE</span>, get_code <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/ibm.html">ibm</a></span><span class="op">(</span>family <span class="op">=</span> <span class="st">"poisson"</span>, adaptive <span class="op">=</span> <span class="cn">TRUE</span>, print_code <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/ibm.html">ibm</a></span><span class="op">(</span>family <span class="op">=</span> <span class="st">"poisson"</span>, adaptive <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>    stan_file <span class="op">=</span> <span class="st">"ibm_poisson.stan"</span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level2">
 <h2 id="locally-adaptive-ibm">Locally adaptive IBM<a class="anchor" aria-label="anchor" href="#locally-adaptive-ibm"></a>
 </h2>
 <p>The adaptive model uses</p>
@@ -128,11 +161,54 @@ local scales allow selected intervals to have substantially larger
 derivative innovations. The derivative remains a continuous Brownian
 path; each local scale controls how much its slope is permitted to
 evolve over an interval.</p>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<p>Internally, locations are mapped to
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false" form="prefix">[</mo><mn>0</mn><mo>,</mo><mn>1</mn><mo stretchy="false" form="postfix">]</mo></mrow><annotation encoding="application/x-tex">[0,1]</annotation></semantics></math>.
+Gaussian and Student-t responses are standardized; other families use
+their latent predictor scale. With all local scales set to one, the
+stochastic departure from the initial linear trajectory has standard
+deviation
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mi>t</mi><mrow><mn>3</mn><mi>/</mi><mn>2</mn></mrow></msup><mi>/</mi><msup><mn>3</mn><mrow><mn>1</mn><mi>/</mi><mn>2</mn></mrow></msup></mrow><annotation encoding="application/x-tex">t^{3/2}/3^{1/2}</annotation></semantics></math>,
+whose maximum is
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>1</mn><mi>/</mi><msup><mn>3</mn><mrow><mn>1</mn><mi>/</mi><mn>2</mn></mrow></msup></mrow><annotation encoding="application/x-tex">1/3^{1/2}</annotation></semantics></math>.
+The arguments <code>global_upper = U</code> and
+<code>global_alpha = alpha</code> therefore calibrate the selected
+half-Cauchy or half-normal prior so that</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">Pr</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">{</mo><mi>γ</mi><mi>/</mi><msqrt><mn>3</mn></msqrt><mo>&gt;</mo><mi>U</mi><mo stretchy="false" form="postfix">}</mo><mo>=</mo><mi>α</mi><mi>.</mi></mrow><annotation encoding="application/x-tex">
+\Pr\{\gamma/\sqrt{3}&gt;U\}=\alpha.
+</annotation></semantics></math></p>
+<p>This calibration is independent of the number and placement of state
+locations.</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fit_adaptive</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ibm.html">ibm</a></span><span class="op">(</span></span>
 <span>  <span class="va">t</span>, <span class="va">y</span>,</span>
 <span>  adaptive <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  global_scale <span class="op">=</span> <span class="fl">0.1</span>,</span>
+<span>  global_prior <span class="op">=</span> <span class="st">"half_cauchy"</span>,</span>
+<span>  global_upper <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  global_alpha <span class="op">=</span> <span class="fl">0.05</span>,</span>
+<span>  chains <span class="op">=</span> <span class="fl">4</span>,</span>
+<span>  iter <span class="op">=</span> <span class="fl">2000</span>,</span>
+<span>  adapt_delta <span class="op">=</span> <span class="fl">0.99</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Same model in centered HMC coordinates</span></span>
+<span><span class="va">fit_adaptive_centered</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ibm.html">ibm</a></span><span class="op">(</span></span>
+<span>  <span class="va">t</span>, <span class="va">y</span>,</span>
+<span>  adaptive <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  parameterization <span class="op">=</span> <span class="st">"centered"</span>,</span>
+<span>  global_prior <span class="op">=</span> <span class="st">"half_normal"</span>,</span>
+<span>  global_upper <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  global_alpha <span class="op">=</span> <span class="fl">0.05</span>,</span>
+<span>  chains <span class="op">=</span> <span class="fl">4</span>,</span>
+<span>  iter <span class="op">=</span> <span class="fl">2000</span>,</span>
+<span>  adapt_delta <span class="op">=</span> <span class="fl">0.99</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">fit_adaptive_regularized</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ibm.html">ibm</a></span><span class="op">(</span></span>
+<span>  <span class="va">t</span>, <span class="va">y</span>,</span>
+<span>  adaptive <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  adaptive_prior <span class="op">=</span> <span class="st">"regularized_horseshoe"</span>,</span>
+<span>  slab_scale <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  slab_df <span class="op">=</span> <span class="fl">4</span>,</span>
 <span>  chains <span class="op">=</span> <span class="fl">4</span>,</span>
 <span>  iter <span class="op">=</span> <span class="fl">2000</span>,</span>
 <span>  adapt_delta <span class="op">=</span> <span class="fl">0.99</span></span>
@@ -143,7 +219,7 @@ evolve over an interval.</p>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">fit_adaptive</span><span class="op">)</span></span></code></pre></div>
 <p>Posterior samples for both the function and derivative are available
 directly:</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">f_draws</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_samples.html">get_samples</a></span><span class="op">(</span><span class="va">fit_adaptive</span>, <span class="st">"f"</span><span class="op">)</span></span>
 <span><span class="va">derivative_draws</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_samples.html">get_samples</a></span><span class="op">(</span><span class="va">fit_adaptive</span>, <span class="st">"fprime"</span><span class="op">)</span></span>
 <span><span class="va">lambda_draws</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_samples.html">get_samples</a></span><span class="op">(</span><span class="va">fit_adaptive</span>, <span class="st">"lambda_interval"</span><span class="op">)</span></span></code></pre></div>

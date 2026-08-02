@@ -17,7 +17,8 @@ get_samples(ibmfit, param = c("f", "fprime"), n_samples = NULL)
 - param:
 
   Stan parameter name. Common choices are `"f"`, `"fprime"`, `"sigma"`,
-  `"tau"`, `"gamma"`, `"xi"`, and `"lambda_interval"`.
+  `"phi"`, `"tau"`, `"gamma"`, `"xi"`, `"xi_regularized"`, `"slab"`, and
+  `"lambda_interval"`.
 
 - n_samples:
 

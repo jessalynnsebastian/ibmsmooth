@@ -13,16 +13,32 @@ ibm(
   y = NULL,
   infer_at = NULL,
   adaptive = FALSE,
+  family = c("gaussian", "student_t", "bernoulli", "binomial", "poisson",
+    "negative_binomial", "lognormal", "gamma", "beta", "exponential"),
+  trials = NULL,
+  exposure = 1,
+  student_df = 4,
+  parameterization = c("noncentered", "centered"),
   smoothing_prior = "tau ~ lognormal(-2, 0.5);",
-  global_scale = 0.1,
+  global_prior = c("half_cauchy", "half_normal"),
+  global_upper = 1,
+  global_alpha = 0.05,
+  adaptive_prior = c("horseshoe", "regularized_horseshoe"),
+  slab_scale = 1,
+  slab_df = 4,
+  regularized_retry = c("ask", "never"),
   log_sigma = list(mu = -1, sd = 1),
+  log_phi = list(mu = 0, sd = 1),
   initial_sd = 5,
   iter = 2000,
   chains = 4,
   cores = getOption("mc.cores", chains),
+  init = "random",
   max_treedepth = 12,
   adapt_delta = 0.9,
   get_code = FALSE,
+  print_code = FALSE,
+  stan_file = NULL,
   ...
 )
 ```
@@ -39,11 +55,37 @@ ibm(
 
 - infer_at:
 
-  Optional additional locations at which to infer the state.
+  Optional additional locations at which to predict the state after
+  sampling. These locations do not enlarge the Stan latent state.
 
 - adaptive:
 
   Logical; use locally adaptive IBM when `TRUE`.
+
+- family:
+
+  Conditionally independent observation family. Available families are
+  `"gaussian"`, `"student_t"`, `"bernoulli"`, `"binomial"`, `"poisson"`,
+  `"negative_binomial"`, `"lognormal"`, `"gamma"`, `"beta"`, and
+  `"exponential"`.
+
+- trials:
+
+  Binomial trial counts. Required for `family = "binomial"`.
+
+- exposure:
+
+  Positive observation exposures for Poisson and negative binomial
+  models. A scalar is recycled. The default is one.
+
+- student_df:
+
+  Positive degrees of freedom for the Student-t likelihood.
+
+- parameterization:
+
+  Either `"noncentered"` (the default) or `"centered"`. Both define the
+  same IBM model with different HMC coordinates.
 
 - smoothing_prior:
 
@@ -52,24 +94,66 @@ ibm(
   `"tau ~ normal(0, 0.5);"` or `"tau ~ student_t(3, 0, 1);"`. This is
   used only when `adaptive = FALSE`.
 
-- global_scale:
+- global_prior:
 
-  Positive half-Cauchy scale for `gamma` in the adaptive global–local
-  prior.
+  Prior family for the adaptive global scale `gamma`: either
+  `"half_cauchy"` or `"half_normal"`.
+
+- global_upper:
+
+  Positive upper bound `U` used to calibrate the global prior through
+  `Pr(gamma / sqrt(3) > U) = global_alpha`. It is in
+  standardized-response units for Gaussian and Student-t models and
+  latent predictor units otherwise.
+
+- global_alpha:
+
+  Tail probability used in the global-prior calibration.
+
+- adaptive_prior:
+
+  Adaptive local-scale prior. `"horseshoe"` is the default;
+  `"regularized_horseshoe"` adds a finite Student-t slab.
+
+- slab_scale:
+
+  Positive slab scale for the regularized horseshoe, on the internal
+  latent derivative-diffusion scale.
+
+- slab_df:
+
+  Positive slab degrees of freedom. The default is 4.
+
+- regularized_retry:
+
+  Either `"ask"` (the default) or `"never"`. After a problematic
+  interactive ordinary-horseshoe fit, `"ask"` offers to rerun the same
+  model and HMC settings with a regularized horseshoe. Non-interactive
+  sessions never start a refit automatically.
 
 - log_sigma:
 
   List with `mu` and positive `sd` for the log observation standard
-  deviation on the internally standardized response scale.
+  deviation for Gaussian, Student-t, and lognormal likelihoods.
+
+- log_phi:
+
+  List with `mu` and positive `sd` for log `phi`: the negative binomial
+  shape, gamma shape, or beta precision parameter.
 
 - initial_sd:
 
   Positive prior standard deviation for the initial function value and
-  derivative on the internally standardized scale.
+  derivative on the internal latent scale.
 
 - iter, chains, cores:
 
   Stan sampling controls.
+
+- init:
+
+  Initial values passed to
+  [`rstan::sampling()`](https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html).
 
 - max_treedepth, adapt_delta:
 
@@ -78,6 +162,16 @@ ibm(
 - get_code:
 
   If `TRUE`, return the selected Stan program rather than fit.
+
+- print_code:
+
+  If `TRUE`, print the selected Stan program. This works without
+  supplying `t` or `y`.
+
+- stan_file:
+
+  Optional path at which to save the selected Stan program. This also
+  works without supplying data.
 
 - ...:
 
@@ -90,10 +184,43 @@ An object of class `ibmfit`, or Stan code when `get_code = TRUE`.
 
 ## Details
 
-Time is shifted and divided by its mean grid spacing and the response is
-standardized before fitting. Consequently, `smoothing_prior` is
-expressed on that stable internal scale. Natural-scale draws are
-returned by the extraction helpers.
+Time is mapped to the unit interval. Gaussian and Student-t responses
+are centered and scaled to unit standard deviation; for other families,
+`f` is represented on its usual link scale (logit for Bernoulli/binomial
+and beta means; log mean for count, gamma, and exponential observations;
+and mean-log for lognormal observations). Locations in `infer_at` are
+evaluated after fitting using exact conditional IBM bridges, avoiding
+additional Stan parameters.
+
+For an adaptive fit, the unit-diffusion IBM departure from its initial
+linear trajectory has standard deviation `t^(3/2) / sqrt(3)` on the
+standardized domain. Its maximum over `[0, 1]` is therefore the
+grid-independent reference scale `sigma_ref = 1 / sqrt(3)`. The selected
+global prior is assigned a scale `s_gamma` such that
+`Pr(gamma / sqrt(3) > global_upper) = global_alpha`. The fitted object
+retains `sigma_ref` and `s_gamma` as `data$reference_sd` and
+`fit_spec$global_scale`.
+
+The non-centered parameterization represents each state transition with
+standard-normal innovations. It is usually the better starting point
+when observations are sparse or noisy, or when most adaptive local
+scales are strongly shrunk. The centered parameterization samples `f`
+and `fprime` directly under the same transition density. It can be more
+efficient when the latent states and large local changes are strongly
+identified by the likelihood. Neither parameterization dominates in
+every dataset. Fit both when practical and compare divergences, R-hat,
+effective sample size per second, leapfrog counts, and treedepth hits
+with
+[`get_diagnostics()`](https://jessalynnsebastian.github.io/ibmsmooth/reference/get_diagnostics.md).
+
+With `adaptive_prior = "regularized_horseshoe"`, the effective local
+scale is \$\$\tilde\xi_j^2 = \frac{c^2\xi_j^2}{c^2+\gamma^2\xi_j^2},\$\$
+where \\c = \code{slab_scale}\sqrt{c\_{\mathrm{aux}}}\\ and
+\\c\_{\mathrm{aux}}\sim\mathrm{InvGamma}(\nu/2,\nu/2)\\ with
+\\\nu=\code{slab_df}\\. Thus the effective interval diffusion standard
+deviation \\\gamma\tilde\xi_j\\ approaches the finite slab scale for
+extreme local scales. This can stabilize isolated, strongly identified
+changes while preserving horseshoe shrinkage near zero.
 
 The adaptive transition over an interval of length \\\Delta_j\\ is
 exactly bivariate normal with mean \\(f'\_j, f_j+\Delta_j f'\_j)\\ and
