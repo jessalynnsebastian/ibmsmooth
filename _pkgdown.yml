@@ -13,12 +13,22 @@ reference:
     contents:
       - ibm
       - ibm_smooth
+      - sample_prior
+  - title: Prediction
+    contents:
+      - predict_curve
+      - posterior_predict
   - title: Exact IBM transitions and simulation
     contents:
+      - ibm_transition_cholesky
       - ibm_transition_covariance
       - simulate_ibm
+  - title: Model diagnostics
+    contents:
+      - check_regularized_horseshoe
   - title: Summarize and plot
     contents:
+      - summarize_performance
       - starts_with("get_")
       - starts_with("plot")
       - starts_with("summary")
