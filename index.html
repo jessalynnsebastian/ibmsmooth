@@ -55,113 +55,31 @@
   <main id="main" class="col-md-9"><div class="section level1">
 <div class="page-header"><h1 id="ibmsmooth">ibmsmooth<a class="anchor" aria-label="anchor" href="#ibmsmooth"></a>
 </h1></div>
-<p><code>ibmsmooth</code> fits integrated Brownian motion smoothers for conditionally independent observations using Stan. The package contains two latent models:</p>
-<ul>
-<li>ordinary IBM with one positive smoothing parameter and a user-supplied Stan prior for that parameter; and</li>
-<li>locally adaptive IBM with horseshoe global–local shrinkage on the derivative diffusion rate.</li>
-</ul>
-<p>For locations (t_j&lt;t_{j+1}), (<em>j=t</em>{j+1}-t_j), and state (x_j=(f’(t_j),f(t_j))^T), both models use the exact transition</p>
-<p>[ x_{j+1}x_j,_j  N_2. ]</p>
-<p>Ordinary IBM sets (_j=^2). The adaptive model sets (_j=<sup>2_j</sup>2), with (_j^+(0,1)) and reference-process-calibrated half-Cauchy or half-normal prior on ().</p>
-<p>After mapping time to ([0,1]), <code>global_upper = U</code> and <code>global_alpha = alpha</code> set the prior scale through ({/&gt;U}=). This uses the maximum reference-process standard deviation and is independent of the observation grid.</p>
+<p><code>ibmsmooth</code> is an R package for Bayesian smoothing with integrated Brownian motion models fitted in Stan. It supports ordinary and locally adaptive smoothing, irregularly spaced observations, and inference for both a function and its derivative.</p>
+<p>The package includes several common observation models, exact continuous-time prediction, posterior diagnostics, plotting, and simulation-performance summaries.</p>
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
+<p>Install the development version from GitHub:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu">remotes</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"jessalynnsebastian/ibmsmooth"</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"remotes"</span><span class="op">)</span></span>
+<span><span class="fu">remotes</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"jessalynnsebastian/ibmsmooth"</span><span class="op">)</span></span></code></pre></div>
+<p>The package uses <code>rstan</code>, so a working Stan toolchain is required. See the <a href="https://mc-stan.org/rstan/articles/rstan.html" class="external-link">RStan getting started guide</a> if you need help configuring it.</p>
 </div>
 <div class="section level2">
-<h2 id="examples">Examples<a class="anchor" aria-label="anchor" href="#examples"></a>
+<h2 id="documentation">Documentation<a class="anchor" aria-label="anchor" href="#documentation"></a>
 </h2>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://jessalynnsebastian.github.io/ibmsmooth/">ibmsmooth</a></span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/ibm.html">ibm</a></span><span class="op">(</span><span class="va">t</span>, <span class="va">y</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Any valid Stan prior statement involving the positive parameter `tau`.</span></span>
-<span><span class="va">fit_half_t</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/ibm.html">ibm</a></span><span class="op">(</span></span>
-<span>  <span class="va">t</span>, <span class="va">y</span>,</span>
-<span>  smoothing_prior <span class="op">=</span> <span class="st">"tau ~ student_t(3, 0, 0.5);"</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">fit_adaptive</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/ibm.html">ibm</a></span><span class="op">(</span></span>
-<span>  <span class="va">t</span>, <span class="va">y</span>,</span>
-<span>  adaptive <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  global_prior <span class="op">=</span> <span class="st">"half_cauchy"</span>,</span>
-<span>  global_upper <span class="op">=</span> <span class="fl">1</span>,</span>
-<span>  global_alpha <span class="op">=</span> <span class="fl">0.05</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Centered implementation of the same model</span></span>
-<span><span class="va">fit_adaptive_centered</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/ibm.html">ibm</a></span><span class="op">(</span></span>
-<span>  <span class="va">t</span>, <span class="va">y</span>,</span>
-<span>  adaptive <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  parameterization <span class="op">=</span> <span class="st">"centered"</span>,</span>
-<span>  global_prior <span class="op">=</span> <span class="st">"half_normal"</span>,</span>
-<span>  global_upper <span class="op">=</span> <span class="fl">1</span>,</span>
-<span>  global_alpha <span class="op">=</span> <span class="fl">0.05</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Optional finite-slab regularized horseshoe</span></span>
-<span><span class="va">fit_adaptive_regularized</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/ibm.html">ibm</a></span><span class="op">(</span></span>
-<span>  <span class="va">t</span>, <span class="va">y</span>,</span>
-<span>  adaptive <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  adaptive_prior <span class="op">=</span> <span class="st">"regularized_horseshoe"</span>,</span>
-<span>  slab_scale <span class="op">=</span> <span class="fl">1</span>,</span>
-<span>  slab_df <span class="op">=</span> <span class="fl">4</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># The default regularized_retry = "ask" also detects the specific combination</span></span>
-<span><span class="co"># of poor HMC diagnostics and local scales pinned near the half-Cauchy boundary.</span></span>
-<span><span class="co"># In an interactive session it offers to run the regularized fit above.</span></span>
-<span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">fit_adaptive</span><span class="op">)</span></span>
-<span><span class="fu"><a href="reference/plot_diffusion.html">plot_diffusion</a></span><span class="op">(</span><span class="va">fit_adaptive</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Visual model checks</span></span>
-<span><span class="fu"><a href="reference/plot_pp_check.html">plot_pp_check</a></span><span class="op">(</span><span class="va">fit_adaptive</span><span class="op">)</span></span>
-<span><span class="fu"><a href="reference/plot_pp_check.html">plot_pp_check</a></span><span class="op">(</span><span class="va">fit_adaptive</span>, type <span class="op">=</span> <span class="st">"density"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="reference/plot_prior_posterior.html">plot_prior_posterior</a></span><span class="op">(</span><span class="va">fit_adaptive</span>, seed <span class="op">=</span> <span class="fl">123</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Timing, ESS, R-hat, divergences, treedepth, acceptance, and E-BFMI</span></span>
-<span><span class="va">diagnostics</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/get_diagnostics.html">get_diagnostics</a></span><span class="op">(</span><span class="va">fit_adaptive</span><span class="op">)</span></span>
-<span><span class="va">diagnostics</span><span class="op">$</span><span class="va">overview</span></span></code></pre></div>
-</div>
-<div class="section level2">
-<h2 id="observation-families">Observation families<a class="anchor" aria-label="anchor" href="#observation-families"></a>
-</h2>
-<p>Use <code>family</code> to select a likelihood. Available families are <code>"gaussian"</code>, <code>"student_t"</code>, <code>"bernoulli"</code>, <code>"binomial"</code>, <code>"poisson"</code>, <code>"negative_binomial"</code>, <code>"lognormal"</code>, <code>"gamma"</code>, <code>"beta"</code>, and <code>"exponential"</code>.</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">fit_counts</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/ibm.html">ibm</a></span><span class="op">(</span><span class="va">t</span>, <span class="va">counts</span>, adaptive <span class="op">=</span> <span class="cn">TRUE</span>, family <span class="op">=</span> <span class="st">"poisson"</span>,</span>
-<span>                  exposure <span class="op">=</span> <span class="va">person_time</span><span class="op">)</span></span>
-<span><span class="va">fit_binary</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/ibm.html">ibm</a></span><span class="op">(</span><span class="va">t</span>, <span class="va">events</span>, family <span class="op">=</span> <span class="st">"binomial"</span>, trials <span class="op">=</span> <span class="va">sample_sizes</span><span class="op">)</span></span></code></pre></div>
-<p>Gaussian and Student-t responses are standardized internally and <code>f</code> is returned on the original response scale. For other families, <code>f</code> is the latent predictor: logit scale for Bernoulli, binomial, and beta means, and log-mean scale for Poisson, negative-binomial, gamma, and exponential observations. For lognormal observations, <code>f</code> is the mean on the log scale. Consequently, <code>global_upper</code> is interpreted on the latent-predictor scale for these families.</p>
-<p>The generated Stan program can be used without supplying data:</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">code</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/ibm.html">ibm</a></span><span class="op">(</span>family <span class="op">=</span> <span class="st">"poisson"</span>, adaptive <span class="op">=</span> <span class="cn">TRUE</span>, get_code <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
-<span><span class="fu"><a href="reference/ibm.html">ibm</a></span><span class="op">(</span>family <span class="op">=</span> <span class="st">"poisson"</span>, adaptive <span class="op">=</span> <span class="cn">TRUE</span>, print_code <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
-<span><span class="fu"><a href="reference/ibm.html">ibm</a></span><span class="op">(</span>family <span class="op">=</span> <span class="st">"poisson"</span>, adaptive <span class="op">=</span> <span class="cn">TRUE</span>, stan_file <span class="op">=</span> <span class="st">"ibm_poisson.stan"</span><span class="op">)</span></span></code></pre></div>
-<p>When the truth is known, such as in a simulation study, function and derivative performance use the same interface:</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="reference/summarize_performance.html">summarize_performance</a></span><span class="op">(</span></span>
-<span>  <span class="va">fit_adaptive</span>,</span>
-<span>  truth <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>f <span class="op">=</span> <span class="va">truth_f</span>, fprime <span class="op">=</span> <span class="va">truth_fprime</span><span class="op">)</span>,</span>
-<span>  new_t <span class="op">=</span> <span class="va">evaluation_grid</span>,</span>
-<span>  level <span class="op">=</span> <span class="fl">0.95</span></span>
-<span><span class="op">)</span></span></code></pre></div>
-<p>This reports mean absolute deviation of the posterior median (MAD), mean credible interval width (MCIW), coverage percentage, and empirical CRPS. Truth entries may instead be functions of <code>t</code>.</p>
-<p>Time is standardized internally. Gaussian and Student-t responses are also standardized, while other families retain their latent link scale. Custom smoothing priors are specified on that internal model scale. Extraction functions transform applicable posterior draws back to the original response and time scales. Locations supplied through <code>infer_at</code> are not added to the Stan state vector; <code><a href="reference/predict_curve.html">predict_curve()</a></code> samples them afterward using exact conditional IBM bridges.</p>
-<p>The default <code>parameterization = "noncentered"</code> is generally preferable when most interval innovations are weakly informed or strongly shrunk. <code>parameterization = "centered"</code> can be preferable when the states and one or more large changes are strongly identified by the likelihood. Both use the same exact IBM transitions and priors; they differ only in their HMC coordinates.</p>
-<p>The adaptive default remains <code>adaptive_prior = "horseshoe"</code>. The optional regularized horseshoe retains shrinkage near zero but caps the effective local diffusion scale with a Student-t slab. <code>slab_scale</code> is specified on the internal latent derivative-diffusion scale.</p>
-<p>The post-fit recommendation can also be inspected directly:</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="reference/check_regularized_horseshoe.html">check_regularized_horseshoe</a></span><span class="op">(</span><span class="va">fit_adaptive</span><span class="op">)</span></span></code></pre></div>
-<p>Interactive retries return the regularized fit and store the triggering ordinary-horseshoe diagnostic summary in <code>fit$retry_info</code>. In scripts and other non-interactive sessions, the package prints the recommendation but never starts another fit automatically. Use <code>regularized_retry = "never"</code> to disable the check and prompt entirely.</p>
+<p>Usage examples and model details are kept in the package vignettes:</p>
+<ul>
+<li><a href="https://jessalynnsebastian.github.io/ibmsmooth/articles/models.html">Ordinary and locally adaptive IBM smoothing</a></li>
+<li><a href="https://jessalynnsebastian.github.io/ibmsmooth/articles/simulating-ibm.html">Simulating integrated Brownian motion</a></li>
+<li><a href="https://jessalynnsebastian.github.io/ibmsmooth/reference/">Function reference</a></li>
+</ul>
 </div>
 <div class="section level2">
 <h2 id="license">License<a class="anchor" aria-label="anchor" href="#license"></a>
 </h2>
-<p>This project is released under the MIT license. See <a href="LICENSE">LICENSE</a>.</p>
+<p>This project is released under the <a href="LICENSE">MIT License</a>.</p>
 </div>
 </div>
   </main><aside class="col-md-3"><div class="links">
